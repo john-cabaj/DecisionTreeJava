@@ -84,4 +84,19 @@ public class ARFF
 			System.out.println("File not found");
 		}
 	}
+	
+	public Examples GetExamples()
+	{
+		return examples;
+	}
+	
+	public Attributes GetAttributes()
+	{
+		return attributes;
+	}
+	
+	public Relation GetRelation()
+	{
+		return relation;
+	}
 }

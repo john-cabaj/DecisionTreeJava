@@ -8,6 +8,13 @@ public class DecisionTree
 	{
 		ARFF parser = new ARFF("heart_train.arff", ARFF.Type.TRAINING);
 		parser.ParseFile();
+		
+		TreeNode root = new TreeNode();
+		Examples examples = parser.GetExamples();
+		Attributes attributes = parser.GetAttributes();
+		
+		
+		
 	}
 
 }

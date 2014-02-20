@@ -8,4 +8,9 @@ public class Relation
 	{
 		this.relation = relation;
 	}
+	
+	public String GetRelation()
+	{
+		return relation;
+	}
 }
