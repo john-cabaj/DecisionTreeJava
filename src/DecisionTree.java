@@ -64,6 +64,7 @@ public class DecisionTree
 		else
 		{
 			Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
+			System.out.println(temp.GetAttribute());
 		}
 	}
 	
@@ -90,15 +91,18 @@ public class DecisionTree
 			example_walker = example_walker.GetNext();
 		}
 		
-		first_class_prob = first_class_value_count/count;
-		second_class_prob = second_class_value_count/count;
+		if(count > 0)
+		{
+			first_class_prob = first_class_value_count/count;
+			second_class_prob = second_class_value_count/count;
+		}
 		
 		entropy = -(first_class_prob)*log2(first_class_prob) - (second_class_prob)*log2(second_class_prob);
 		
 		Attribute attribute_walker = attributes.GetAttributesHead();
 		Feature feature_walker = null;
 		Value value_walker = null;
-		int left_branch_first_value = 0, left_branch_second_value = 0, right_branch_first_value = 0, right_branch_second_value = 0, left_branch_count = 0, right_branch_count = 0;
+		double left_branch_first_value = 0, left_branch_second_value = 0, right_branch_first_value = 0, right_branch_second_value = 0, left_branch_count = 0, right_branch_count = 0;
 		double left_branch_first_value_prob = 0, left_branch_second_value_prob = 0, right_branch_first_value_prob = 0, right_branch_second_value_prob = 0;
 		double left_entropy = 0, right_entropy = 0;
 		double info_gain = 0;
@@ -131,17 +135,17 @@ public class DecisionTree
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
-					if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.getClass().equals(first_class_value))
+					if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.GetClassValue().equals(first_class_value))
 					{
 						left_branch_first_value++;
 						left_branch_count++;
 					}
-					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.getClass().equals(second_class_value))
+					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.GetClassValue().equals(second_class_value))
 					{
 						left_branch_second_value++;
 						left_branch_count++;
 					}
-					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) > mid) && example_walker.getClass().equals(first_class_value))
+					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) > mid) && example_walker.GetClassValue().equals(first_class_value))
 					{
 						right_branch_first_value++;
 						right_branch_count++;
@@ -155,15 +159,23 @@ public class DecisionTree
 					example_walker = example_walker.GetNext();
 				}
 
-				left_branch_first_value_prob = left_branch_first_value/left_branch_count;
-				left_branch_second_value_prob = left_branch_second_value/left_branch_count;
-				right_branch_first_value_prob = right_branch_first_value/right_branch_count;
-				right_branch_second_value_prob = right_branch_second_value/right_branch_count;
+				if(left_branch_count > 0)
+				{
+					left_branch_first_value_prob = left_branch_first_value/left_branch_count;
+					left_branch_second_value_prob = left_branch_second_value/left_branch_count;
+				}
+				if(right_branch_count > 0)
+				{
+					right_branch_first_value_prob = right_branch_first_value/right_branch_count;
+					right_branch_second_value_prob = right_branch_second_value/right_branch_count;
+				}
 				
 				left_entropy = -(left_branch_first_value_prob)*log2(left_branch_first_value_prob) - (left_branch_second_value_prob)*log2(left_branch_second_value_prob);
 				right_entropy = -(right_branch_first_value_prob)*log2(right_branch_first_value_prob) - (right_branch_second_value_prob)*log2(right_branch_second_value_prob);
 				
-				info_gain = entropy - left_entropy - right_entropy;
+				if(count > 0)
+				info_gain = entropy - (left_branch_count/count)*left_entropy - (right_branch_count/count)*right_entropy;
+				
 				if(info_gain > max)
 				{
 					max = info_gain;
@@ -172,26 +184,68 @@ public class DecisionTree
 			}
 			else
 			{
-				while(feature_walker != null)
+				double[] entropies = new double[attribute_walker.GetFeatureCount()];
+				first_class_value_count = 0;
+				second_class_value_count = 0;
+				double branch_count = 0;
+										
+				for(int i = 0; i < entropies.length; i++)
 				{
 					example_walker = examples.GetExamplesHead();
 					while(example_walker != null)
 					{
 						value_walker = example_walker.GetValuesHead();
-						while(value_walker != null)
+						while(!value_walker.GetAttribute().equals(attribute_walker))
 						{
-							if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(first_class_value))
-								first_class_value_count++;
-							else if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(second_class_value))
-								second_class_value_count++;
+							value_walker = value_walker.GetNext();
 						}
+						
+						if(value_walker.GetValue().equals(feature_walker.GetFeature()))
+						{
+							if(example_walker.GetClassValue().equals(first_class_value))
+								first_class_value_count++;
+							else if(example_walker.GetClassValue().equals(second_class_value))
+								second_class_value_count++;
+							
+							branch_count++;
+						}
+						
+						example_walker = example_walker.GetNext();
 					}
 					
+					if(branch_count > 0)
+					{
+						first_class_prob = first_class_value_count/branch_count;
+						second_class_prob = second_class_value_count/branch_count;
+					}
+					
+					entropies[i] = (-first_class_prob)*log2(first_class_prob) - (second_class_prob)*log2(second_class_prob);
+					
+					if(count > 0)
+						entropies[i] = (branch_count/count)*entropies[i];
+					
 					feature_walker = feature_walker.GetNext();
+					first_class_value_count = 0;
+					second_class_value_count = 0;
+					branch_count = 0;
 				}
 				
-				attribute_walker = attribute_walker.GetNext();
+				double entr_sum = 0;
+				for(double entr : entropies)
+				{
+					entr_sum += entr;
+				}
+				
+				info_gain = entropy - entr_sum;
+				
+				if(info_gain > max)
+				{
+					max = info_gain;
+					max_gain = attribute_walker;
+				}
 			}
+			
+			attribute_walker = attribute_walker.GetNext();
 		}
 		
 		return max_gain;
