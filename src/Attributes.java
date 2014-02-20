@@ -37,4 +37,12 @@ public class Attributes
 	{
 		return attributes_tail;
 	}
+	
+	public void RemoveTail()
+	{
+		attributes_tail.GetPrev().SetNext(null);
+		attributes_tail = attributes_tail.GetPrev();
+		attributes_tail.SetPrev(null);
+		attributes_count--;
+	}
 }

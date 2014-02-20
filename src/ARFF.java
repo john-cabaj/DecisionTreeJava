@@ -10,6 +10,8 @@ public class ARFF
 	private Relation relation = null;
 	private Attributes attributes = null;
 	private Examples examples = null;
+	private String first_class_value = null;
+	private String second_class_value = null;
 	public Type type;
 	
 	public enum Type
@@ -52,9 +54,10 @@ public class ARFF
 					String[] data_tokens = line.split("[,]");
 					Example ex = new Example();
 					
-					for(int i = 0; i < data_tokens.length; i++)
+					for(int i = 0; i < data_tokens.length - 1; i++)
 						ex.AddValues(data_tokens[i]);
 					
+					ex.SetClassValue(data_tokens[data_tokens.length - 1]);
 					examples.AddExample(ex);
 				}
 				
@@ -77,6 +80,11 @@ public class ARFF
 					data = true;
 			}
 			
+			first_class_value = attributes.GetAttributesTail().GetFeaturesHead().GetFeature();
+			second_class_value = attributes.GetAttributesTail().GetFeaturesTail().GetFeature();
+			
+			attributes.RemoveTail();
+			
 			scan.close();
 		}
 		catch(FileNotFoundException fnfe)
@@ -98,5 +106,15 @@ public class ARFF
 	public Relation GetRelation()
 	{
 		return relation;
+	}
+	
+	public String GetFirstClassValue()
+	{
+		return first_class_value;
+	}
+	
+	public String GetSecondClassValue()
+	{
+		return second_class_value;
 	}
 }

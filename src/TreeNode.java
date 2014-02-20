@@ -4,8 +4,9 @@ public class TreeNode
 {
 	private TreeNode left = null;
 	private TreeNode right = null;
-	private int positive = 0;
-	private int negative = 0;
+	private int first_class_value = 0;
+	private int second_class_value = 0;
+	private String class_value = null;
 	public Type type;
 	
 	public enum Type
@@ -33,23 +34,33 @@ public class TreeNode
 		right = node;
 	}
 	
-	public int GetPostive()
+	public int GetFirstClassValue()
 	{
-		return positive;
+		return first_class_value;
 	}
 	
-	public void SetPositive(int positive)
+	public void SetFirstClassValue(int first_class_value)
 	{
-		this.positive = positive;
+		this.first_class_value = first_class_value;
 	}
 	
-	public int GetNegative()
+	public int GetSecondClassValue()
 	{
-		return negative;
+		return second_class_value;
 	}
 	
-	public void SetNegative(int negative)
+	public void SetSecondClassValue(int second_class_value)
 	{
-		this.negative = negative;
+		this.second_class_value = second_class_value;
+	}
+	
+	public String GetClassValue()
+	{
+		return class_value;
+	}
+	
+	public void SetClassValue(String class_value)
+	{
+		this.class_value = class_value;
 	}
 }

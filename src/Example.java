@@ -6,6 +6,7 @@ public class Example
 	private Value values_tail = null;
 	private Example next = null;
 	private Example prev = null;
+	private String class_value = null;
 	private int values_count = 0;
 	
 	public void AddValues(String value)
@@ -59,5 +60,15 @@ public class Example
 	public void SetPrev(Example example)
 	{
 		prev = example;
+	}
+	
+	public String GetClassValue()
+	{
+		return class_value;
+	}
+	
+	public void SetClassValue(String class_value)
+	{
+		this.class_value = class_value;
 	}
 }
