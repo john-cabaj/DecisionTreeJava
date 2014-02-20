@@ -8,10 +8,11 @@ public class Example
 	private Example prev = null;
 	private String class_value = null;
 	private int values_count = 0;
+	private Value held_value;
 	
-	public void AddValues(String value)
+	public void AddValues(String value, Attribute attribute)
 	{
-		Value temp = new Value(value);
+		Value temp = new Value(value, attribute);
 		if(values_head == null)
 		{
 			values_head = temp;
@@ -70,5 +71,15 @@ public class Example
 	public void SetClassValue(String class_value)
 	{
 		this.class_value = class_value;
+	}
+	
+	public Value GetHeldValue()
+	{
+		return held_value;
+	}
+	
+	public void SetHeldValue(Value held_value)
+	{
+		this.held_value = held_value;
 	}
 }

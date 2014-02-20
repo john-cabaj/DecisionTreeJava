@@ -40,6 +40,7 @@ public class ARFF
 		try
 		{
 			Scanner scan = new Scanner(new File(filename));
+			Attribute attribute_walker = null;
 			String line = null;
 			attributes = new Attributes();
 			examples = new Examples();
@@ -53,9 +54,13 @@ public class ARFF
 				{
 					String[] data_tokens = line.split("[,]");
 					Example ex = new Example();
+					attribute_walker = attributes.GetAttributesHead();
 					
 					for(int i = 0; i < data_tokens.length - 1; i++)
-						ex.AddValues(data_tokens[i]);
+					{
+						ex.AddValues(data_tokens[i], attribute_walker);
+						attribute_walker = attribute_walker.GetNext();
+					}
 					
 					ex.SetClassValue(data_tokens[data_tokens.length - 1]);
 					examples.AddExample(ex);

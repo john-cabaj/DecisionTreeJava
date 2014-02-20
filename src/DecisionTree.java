@@ -63,11 +63,11 @@ public class DecisionTree
 		}
 		else
 		{
-			
+			Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
 		}
 	}
 	
-	private Attribute ChooseSplit(Attributes attributes, Examples examples, String first_class_value, String second_class_value)
+	private static Attribute ChooseSplit(Attributes attributes, Examples examples, String first_class_value, String second_class_value)
 	{
 		Attribute max_gain = null;
 		double entropy = 0;
@@ -76,7 +76,7 @@ public class DecisionTree
 		int max = 0;
 		
 		Example example_walker = examples.GetExamplesHead();
-		int first_class_value_count = 0, second_class_value_count = 0, count = 0;
+		double first_class_value_count = 0, second_class_value_count = 0, count = 0;
 		
 		while(example_walker != null)
 		{
@@ -96,19 +96,54 @@ public class DecisionTree
 		entropy = -(first_class_prob)*log2(first_class_prob) - (second_class_prob)*log2(second_class_prob);
 		
 		Attribute attribute_walker = attributes.GetAttributesHead();
+		Feature feature_walker = null;
+		Value value_walker = null;
 		first_class_value_count = 0;
 		second_class_value_count = 0;
 		count = 0;
+		double mid_sum = 0, mid_count = 0, mid = 0;
 		
 		while(attribute_walker != null)
 		{
-			Feature feature_walker = attribute_walker.GetFeaturesHead();
+			feature_walker = attribute_walker.GetFeaturesHead();
+			
+			if(feature_walker.GetFeature().equals("real"))
+			{
+				example_walker = examples.GetExamplesHead();
+				while(example_walker != null)
+				{
+					value_walker = example_walker.GetValuesHead();
+					while(!value_walker.GetAttribute().equals(attribute_walker))
+					{
+						value_walker = value_walker.GetNext();
+					}
+					
+					mid_sum += Double.parseDouble(value_walker.GetValue());
+					mid_count++;
+					example_walker.SetHeldValue(value_walker);
+					
+					example_walker = example_walker.GetNext();
+				}
+				
+				mid = midpoint(mid_sum, mid_count);
+				
+				example_walker = examples.GetExamplesHead();
+				while(example_walker != null)
+				{
+					
+				}
+			}
+			else
+			{
+				
+			}
+			
 			while(feature_walker != null)
 			{
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
-					Value value_walker = example_walker.GetValuesHead();
+					value_walker = example_walker.GetValuesHead();
 					while(value_walker != null)
 					{
 						if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(first_class_value))
@@ -127,9 +162,14 @@ public class DecisionTree
 		return max_gain;
 	}
 	
-	private double log2(double input)
+	private static double log2(double input)
 	{
 		return (Math.log10(input)/Math.log10(2));
+	}
+	
+	private static double midpoint(double sum, double count)
+	{
+		return sum/count;
 	}
 
 }
