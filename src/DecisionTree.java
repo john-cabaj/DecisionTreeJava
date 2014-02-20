@@ -73,7 +73,7 @@ public class DecisionTree
 		double entropy = 0;
 		double first_class_prob = 0;
 		double second_class_prob = 0;
-		int max = 0;
+		double max = 0;
 		
 		Example example_walker = examples.GetExamplesHead();
 		double first_class_value_count = 0, second_class_value_count = 0, count = 0;
@@ -98,9 +98,10 @@ public class DecisionTree
 		Attribute attribute_walker = attributes.GetAttributesHead();
 		Feature feature_walker = null;
 		Value value_walker = null;
-		first_class_value_count = 0;
-		second_class_value_count = 0;
-		count = 0;
+		int left_branch_first_value = 0, left_branch_second_value = 0, right_branch_first_value = 0, right_branch_second_value = 0, left_branch_count = 0, right_branch_count = 0;
+		double left_branch_first_value_prob = 0, left_branch_second_value_prob = 0, right_branch_first_value_prob = 0, right_branch_second_value_prob = 0;
+		double left_entropy = 0, right_entropy = 0;
+		double info_gain = 0;
 		double mid_sum = 0, mid_count = 0, mid = 0;
 		
 		while(attribute_walker != null)
@@ -130,33 +131,67 @@ public class DecisionTree
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
-					
+					if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.getClass().equals(first_class_value))
+					{
+						left_branch_first_value++;
+						left_branch_count++;
+					}
+					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.getClass().equals(second_class_value))
+					{
+						left_branch_second_value++;
+						left_branch_count++;
+					}
+					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) > mid) && example_walker.getClass().equals(first_class_value))
+					{
+						right_branch_first_value++;
+						right_branch_count++;
+					}
+					else
+					{
+						right_branch_second_value++;
+						right_branch_count++;
+					}
+																			
+					example_walker = example_walker.GetNext();
+				}
+
+				left_branch_first_value_prob = left_branch_first_value/left_branch_count;
+				left_branch_second_value_prob = left_branch_second_value/left_branch_count;
+				right_branch_first_value_prob = right_branch_first_value/right_branch_count;
+				right_branch_second_value_prob = right_branch_second_value/right_branch_count;
+				
+				left_entropy = -(left_branch_first_value_prob)*log2(left_branch_first_value_prob) - (left_branch_second_value_prob)*log2(left_branch_second_value_prob);
+				right_entropy = -(right_branch_first_value_prob)*log2(right_branch_first_value_prob) - (right_branch_second_value_prob)*log2(right_branch_second_value_prob);
+				
+				info_gain = entropy - left_entropy - right_entropy;
+				if(info_gain > max)
+				{
+					max = info_gain;
+					max_gain = attribute_walker;
 				}
 			}
 			else
 			{
-				
-			}
-			
-			while(feature_walker != null)
-			{
-				example_walker = examples.GetExamplesHead();
-				while(example_walker != null)
+				while(feature_walker != null)
 				{
-					value_walker = example_walker.GetValuesHead();
-					while(value_walker != null)
+					example_walker = examples.GetExamplesHead();
+					while(example_walker != null)
 					{
-						if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(first_class_value))
-							first_class_value_count++;
-						else if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(second_class_value))
-							second_class_value_count++;
+						value_walker = example_walker.GetValuesHead();
+						while(value_walker != null)
+						{
+							if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(first_class_value))
+								first_class_value_count++;
+							else if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(second_class_value))
+								second_class_value_count++;
+						}
 					}
+					
+					feature_walker = feature_walker.GetNext();
 				}
 				
-				feature_walker = feature_walker.GetNext();
+				attribute_walker = attribute_walker.GetNext();
 			}
-			
-			attribute_walker = attribute_walker.GetNext();
 		}
 		
 		return max_gain;
