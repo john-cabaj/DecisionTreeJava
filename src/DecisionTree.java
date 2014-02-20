@@ -1,3 +1,4 @@
+import java.math.*;
 
 //decision tree class
 public class DecisionTree 
@@ -25,6 +26,8 @@ public class DecisionTree
 				second_class_value_count++;
 			
 			count++;
+			
+			example_walker = example_walker.GetNext();
 		}
 		
 		if(first_class_value_count == count)
@@ -62,6 +65,71 @@ public class DecisionTree
 		{
 			
 		}
+	}
+	
+	private Attribute ChooseSplit(Attributes attributes, Examples examples, String first_class_value, String second_class_value)
+	{
+		Attribute max_gain = null;
+		double entropy = 0;
+		double first_class_prob = 0;
+		double second_class_prob = 0;
+		int max = 0;
+		
+		Example example_walker = examples.GetExamplesHead();
+		int first_class_value_count = 0, second_class_value_count = 0, count = 0;
+		
+		while(example_walker != null)
+		{
+			if(example_walker.GetClassValue().equals(first_class_value))
+				first_class_value_count++;
+			else if(example_walker.GetClassValue().equals(second_class_value))
+				second_class_value_count++;
+			
+			count++;
+			
+			example_walker = example_walker.GetNext();
+		}
+		
+		first_class_prob = first_class_value_count/count;
+		second_class_prob = second_class_value_count/count;
+		
+		entropy = -(first_class_prob)*log2(first_class_prob) - (second_class_prob)*log2(second_class_prob);
+		
+		Attribute attribute_walker = attributes.GetAttributesHead();
+		first_class_value_count = 0;
+		second_class_value_count = 0;
+		count = 0;
+		
+		while(attribute_walker != null)
+		{
+			Feature feature_walker = attribute_walker.GetFeaturesHead();
+			while(feature_walker != null)
+			{
+				example_walker = examples.GetExamplesHead();
+				while(example_walker != null)
+				{
+					Value value_walker = example_walker.GetValuesHead();
+					while(value_walker != null)
+					{
+						if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(first_class_value))
+							first_class_value_count++;
+						else if(feature_walker.GetFeature().equals(value_walker.GetValue()) && example_walker.GetClassValue().equals(second_class_value))
+							second_class_value_count++;
+					}
+				}
+				
+				feature_walker = feature_walker.GetNext();
+			}
+			
+			attribute_walker = attribute_walker.GetNext();
+		}
+		
+		return max_gain;
+	}
+	
+	private double log2(double input)
+	{
+		return (Math.log10(input)/Math.log10(2));
 	}
 
 }
