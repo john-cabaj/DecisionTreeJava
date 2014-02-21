@@ -2,8 +2,8 @@
 //tree node class
 public class TreeNode 
 {
-	private TreeNode left = null;
-	private TreeNode right = null;
+	private TreeNode[] successors = null;
+	private Attribute attribute = null;
 	private int first_class_value = 0;
 	private int second_class_value = 0;
 	private String class_value = null;
@@ -14,24 +14,19 @@ public class TreeNode
 		ATTRIBUTE, FEATURE, CLASS_VALUE
 	}
 	
-	public TreeNode GetLeft()
+	public TreeNode(int successors)
 	{
-		return left;
+		this.successors = new TreeNode[successors];
 	}
 	
-	public void SetLeft(TreeNode node)
+	public TreeNode GetSuccessor(int index)
 	{
-		left = node;
+		return successors[index];
 	}
 	
-	public TreeNode GetRight()
+	public void SetSuccessor(TreeNode successor, int index)
 	{
-		return right;
-	}
-	
-	public void SetRight(TreeNode node)
-	{
-		right = node;
+		successors[index] = successor;
 	}
 	
 	public int GetFirstClassValue()
@@ -62,5 +57,15 @@ public class TreeNode
 	public void SetClassValue(String class_value)
 	{
 		this.class_value = class_value;
+	}
+	
+	public Attribute GetAttribute()
+	{
+		return attribute;
+	}
+	
+	public void SetAttribute(Attribute attribute)
+	{
+		this.attribute = attribute;
 	}
 }

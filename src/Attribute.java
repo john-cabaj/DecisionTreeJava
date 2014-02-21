@@ -16,7 +16,7 @@ public class Attribute
 	
 	public void AddFeatures(String feature)
 	{
-		Feature temp = new Feature(feature);
+		Feature temp = new Feature(feature, this);
 		if(features_head == null)
 		{
 			features_head = temp;

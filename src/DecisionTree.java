@@ -10,7 +10,6 @@ public class DecisionTree
 		ARFF parser = new ARFF("heart_train.arff", ARFF.Type.TRAINING);
 		parser.ParseFile();
 		
-		TreeNode root = new TreeNode();
 		Examples examples = parser.GetExamples();
 		Attributes attributes = parser.GetAttributes();
 		String first_class_value = parser.GetFirstClassValue();
@@ -32,6 +31,7 @@ public class DecisionTree
 		
 		if(first_class_value_count == count)
 		{
+			TreeNode root = new TreeNode(0);
 			root.type = TreeNode.Type.CLASS_VALUE;
 			root.SetFirstClassValue(count);
 			root.SetSecondClassValue(0);
@@ -39,6 +39,7 @@ public class DecisionTree
 		}
 		else if(second_class_value_count == count)
 		{
+			TreeNode root = new TreeNode(0);
 			root.type = TreeNode.Type.CLASS_VALUE;
 			root.SetSecondClassValue(count);
 			root.SetFirstClassValue(0);
@@ -46,6 +47,8 @@ public class DecisionTree
 		}
 		else if(attributes.GetAttributesCount() == 0)
 		{
+			TreeNode root = new TreeNode(0);
+			
 			if(first_class_value_count >= second_class_value_count)
 			{
 				root.type = TreeNode.Type.CLASS_VALUE;
@@ -63,9 +66,71 @@ public class DecisionTree
 		}
 		else
 		{
-			Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
-			System.out.println(temp.GetAttribute());
+			TreeNode root = null;
+			root = BuildTree(attributes, examples, first_class_value, second_class_value, 2);
 		}
+	}
+	
+	private static TreeNode BuildTree(Attributes attributes, Examples examples, String first_class_value, String second_class_value, int m_threshold)
+	{
+		Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
+		TreeNode root = new TreeNode(temp.GetFeatureCount());
+		root.type = TreeNode.Type.ATTRIBUTE;
+		root.SetAttribute(temp);
+		
+		Feature feature_walker = root.GetAttribute().GetFeaturesHead();
+		Example example_walker = examples.GetExamplesHead();
+		Value value_walker = null;
+		for(int i = 0; i < root.GetAttribute().GetFeatureCount(); i++)
+		{
+			Examples examples_subset = new Examples();
+			while(example_walker != null)
+			{
+				value_walker = example_walker.GetValuesHead();
+				while(!value_walker.GetAttribute().equals(feature_walker.GetAttribute()))
+				{
+					value_walker = value_walker.GetNext();
+				}
+				
+				if(value_walker.GetValue().equals(feature_walker.GetFeature()))
+				{
+					examples_subset.AddExample(example_walker);
+				}
+				
+				example_walker = example_walker.GetNext();
+			}
+			
+			if(examples_subset.GetExamplesCount() < m_threshold)
+			{
+				TreeNode leaf = new TreeNode(0);
+				leaf.type = TreeNode.Type.CLASS_VALUE;
+				example_walker = examples.GetExamplesHead();
+				int first_class_value_count = 0, second_class_value_count = 0;
+				while(example_walker != null)
+				{
+					if(example_walker.GetClassValue().equals(first_class_value))
+						first_class_value_count++;
+					else if(example_walker.GetClassValue().equals(second_class_value))
+						second_class_value_count++;
+					
+					example_walker = example_walker.GetNext();
+				}
+				
+				if(first_class_value_count >= second_class_value_count)
+					leaf.SetClassValue(first_class_value);
+				else
+					leaf.SetClassValue(second_class_value);
+				
+				root.SetSuccessor(leaf, i);
+			}
+			else
+			{
+				
+			}
+		}
+		
+		
+		return root;
 	}
 	
 	private static Attribute ChooseSplit(Attributes attributes, Examples examples, String first_class_value, String second_class_value)
