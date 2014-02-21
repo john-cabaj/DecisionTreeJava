@@ -4,7 +4,17 @@ public class Examples
 {
 	private Example examples_head = null;
 	private Example examples_tail = null;
+	private String first_value = null;
+	private String second_value = null;
+	private int first_value_count = 0;
+	private int second_value_count = 0;
 	private int examples_count = 0;
+	
+	public Examples(String first_value, String second_value)
+	{
+		this.first_value = first_value;
+		this.second_value = second_value;
+	}
 	
 	public void AddExample(Example example)
 	{
@@ -19,6 +29,11 @@ public class Examples
 			example.SetPrev(examples_tail);
 			examples_tail = example;
 		}
+		
+		if(example.GetClassValue().equals(first_value))
+			first_value_count++;
+		else if(example.GetClassValue().equals(second_value))
+			second_value_count++;
 		
 		examples_count++;
 	}
@@ -36,5 +51,14 @@ public class Examples
 	public Example GetExamplesTail()
 	{
 		return examples_tail;
+	}
+	
+	public int GetFirstClassCount()
+	{
+		return first_value_count;
+	}
+	public int GetSecondClassCount()
+	{
+		return second_value_count;
 	}
 }

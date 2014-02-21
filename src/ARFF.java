@@ -43,7 +43,6 @@ public class ARFF
 			Attribute attribute_walker = null;
 			String line = null;
 			attributes = new Attributes();
-			examples = new Examples();
 			boolean data = false;
 			
 			while(scan.hasNextLine())
@@ -82,14 +81,17 @@ public class ARFF
 					attributes.AddAttribute(attr);
 				}
 				else if(line.contains("@data"))
+				{
 					data = true;
+					
+					first_class_value = attributes.GetAttributesTail().GetFeaturesHead().GetFeature();
+					second_class_value = attributes.GetAttributesTail().GetFeaturesTail().GetFeature();
+					examples = new Examples(first_class_value, second_class_value);
+					
+					attributes.RemoveTail();
+				}
 			}
-			
-			first_class_value = attributes.GetAttributesTail().GetFeaturesHead().GetFeature();
-			second_class_value = attributes.GetAttributesTail().GetFeaturesTail().GetFeature();
-			
-			attributes.RemoveTail();
-			
+						
 			scan.close();
 		}
 		catch(FileNotFoundException fnfe)

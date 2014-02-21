@@ -15,52 +15,52 @@ public class DecisionTree
 		String first_class_value = parser.GetFirstClassValue();
 		String second_class_value = parser.GetSecondClassValue();
 		
-		Example example_walker = examples.GetExamplesHead();
-		int first_class_value_count = 0, second_class_value_count = 0, count = 0;
-		while(example_walker != null)
-		{
-			if(example_walker.GetClassValue().equals(first_class_value))
-				first_class_value_count++;
-			else if(example_walker.GetClassValue().equals(second_class_value))
-				second_class_value_count++;
-			
-			count++;
-			
-			example_walker = example_walker.GetNext();
-		}
+//		Example example_walker = examples.GetExamplesHead();
+//		int first_class_value_count = 0, second_class_value_count = 0, count = 0;
+//		while(example_walker != null)
+//		{
+//			if(example_walker.GetClassValue().equals(first_class_value))
+//				first_class_value_count++;
+//			else if(example_walker.GetClassValue().equals(second_class_value))
+//				second_class_value_count++;
+//			
+//			count++;
+//			
+//			example_walker = example_walker.GetNext();
+//		}
 		
-		if(first_class_value_count == count)
+		if(examples.GetFirstClassCount() == examples.GetExamplesCount())
 		{
 			TreeNode root = new TreeNode(0);
 			root.type = TreeNode.Type.CLASS_VALUE;
-			root.SetFirstClassValue(count);
-			root.SetSecondClassValue(0);
+			root.SetFirstClassValue(examples.GetFirstClassCount());
+			root.SetSecondClassValue(examples.GetSecondClassCount());
 			root.SetClassValue(first_class_value);
 		}
-		else if(second_class_value_count == count)
+		else if(examples.GetSecondClassCount() == examples.GetExamplesCount())
 		{
 			TreeNode root = new TreeNode(0);
 			root.type = TreeNode.Type.CLASS_VALUE;
-			root.SetSecondClassValue(count);
-			root.SetFirstClassValue(0);
+			root.SetSecondClassValue(examples.GetSecondClassCount());
+			root.SetFirstClassValue(examples.GetFirstClassCount());
 			root.SetClassValue(second_class_value);
 		}
 		else if(attributes.GetAttributesCount() == 0)
 		{
 			TreeNode root = new TreeNode(0);
 			
-			if(first_class_value_count >= second_class_value_count)
+			if(examples.GetFirstClassCount() >= examples.GetSecondClassCount())
 			{
 				root.type = TreeNode.Type.CLASS_VALUE;
-				root.SetFirstClassValue(first_class_value_count);
-				root.SetSecondClassValue(second_class_value_count);
+				root.SetFirstClassValue(examples.GetFirstClassCount());
+				root.SetSecondClassValue(examples.GetSecondClassCount());
 				root.SetClassValue(first_class_value);
 			}
 			else
 			{
 				root.type = TreeNode.Type.CLASS_VALUE;
-				root.SetSecondClassValue(second_class_value_count);
-				root.SetFirstClassValue(first_class_value_count);
+				root.SetSecondClassValue(examples.GetSecondClassCount());
+				root.SetFirstClassValue(examples.GetFirstClassCount());
 				root.SetClassValue(second_class_value);
 			}
 		}
@@ -83,7 +83,7 @@ public class DecisionTree
 		Value value_walker = null;
 		for(int i = 0; i < root.GetAttribute().GetFeatureCount(); i++)
 		{
-			Examples examples_subset = new Examples();
+			Examples examples_subset = new Examples(first_class_value, second_class_value);
 			while(example_walker != null)
 			{
 				value_walker = example_walker.GetValuesHead();
@@ -99,6 +99,8 @@ public class DecisionTree
 				
 				example_walker = example_walker.GetNext();
 			}
+			
+			
 			
 			if(examples_subset.GetExamplesCount() < m_threshold)
 			{
@@ -141,25 +143,25 @@ public class DecisionTree
 		double second_class_prob = 0;
 		double max = 0;
 		
-		Example example_walker = examples.GetExamplesHead();
-		double first_class_value_count = 0, second_class_value_count = 0, count = 0;
+//		Example example_walker = examples.GetExamplesHead();
+//		double first_class_value_count = 0, second_class_value_count = 0, count = 0;
+//		
+//		while(example_walker != null)
+//		{
+//			if(example_walker.GetClassValue().equals(first_class_value))
+//				first_class_value_count++;
+//			else if(example_walker.GetClassValue().equals(second_class_value))
+//				second_class_value_count++;
+//			
+//			count++;
+//			
+//			example_walker = example_walker.GetNext();
+//		}
 		
-		while(example_walker != null)
+		if(examples.GetExamplesCount() > 0)
 		{
-			if(example_walker.GetClassValue().equals(first_class_value))
-				first_class_value_count++;
-			else if(example_walker.GetClassValue().equals(second_class_value))
-				second_class_value_count++;
-			
-			count++;
-			
-			example_walker = example_walker.GetNext();
-		}
-		
-		if(count > 0)
-		{
-			first_class_prob = first_class_value_count/count;
-			second_class_prob = second_class_value_count/count;
+			first_class_prob = (double)examples.GetFirstClassCount()/(double)examples.GetExamplesCount();
+			second_class_prob = (double)examples.GetSecondClassCount()/(double)examples.GetExamplesCount();
 		}
 		
 		entropy = -(first_class_prob)*log2(first_class_prob) - (second_class_prob)*log2(second_class_prob);
@@ -172,6 +174,7 @@ public class DecisionTree
 		double left_entropy = 0, right_entropy = 0;
 		double info_gain = 0;
 		double mid_sum = 0, mid_count = 0, mid = 0;
+		Example example_walker = examples.GetExamplesHead();
 		
 		while(attribute_walker != null)
 		{
@@ -238,8 +241,8 @@ public class DecisionTree
 				left_entropy = -(left_branch_first_value_prob)*log2(left_branch_first_value_prob) - (left_branch_second_value_prob)*log2(left_branch_second_value_prob);
 				right_entropy = -(right_branch_first_value_prob)*log2(right_branch_first_value_prob) - (right_branch_second_value_prob)*log2(right_branch_second_value_prob);
 				
-				if(count > 0)
-				info_gain = entropy - (left_branch_count/count)*left_entropy - (right_branch_count/count)*right_entropy;
+				if(examples.GetExamplesCount() > 0)
+					info_gain = entropy - (left_branch_count/examples.GetExamplesCount())*left_entropy - (right_branch_count/examples.GetExamplesCount())*right_entropy;
 				
 				if(info_gain > max)
 				{
@@ -249,9 +252,11 @@ public class DecisionTree
 			}
 			else
 			{
+				if(attribute_walker.GetAttribute().equals("thal"))
+					System.out.println("HERE");
+				
 				double[] entropies = new double[attribute_walker.GetFeatureCount()];
-				first_class_value_count = 0;
-				second_class_value_count = 0;
+				double first_class_value_count = 0, second_class_value_count = 0, count = 0;
 				double branch_count = 0;
 										
 				for(int i = 0; i < entropies.length; i++)
@@ -286,8 +291,8 @@ public class DecisionTree
 					
 					entropies[i] = (-first_class_prob)*log2(first_class_prob) - (second_class_prob)*log2(second_class_prob);
 					
-					if(count > 0)
-						entropies[i] = (branch_count/count)*entropies[i];
+					if(examples.GetExamplesCount() > 0)
+						entropies[i] = (branch_count/examples.GetExamplesCount())*entropies[i];
 					
 					feature_walker = feature_walker.GetNext();
 					first_class_value_count = 0;
