@@ -68,32 +68,45 @@ public class DecisionTree
 		{
 			TreeNode root = null;
 			root = BuildTree(attributes, examples, first_class_value, second_class_value, 2);
+			System.out.println("END");
 		}
 	}
 	
 	private static TreeNode BuildTree(Attributes attributes, Examples examples, String first_class_value, String second_class_value, int m_threshold)
 	{
 		Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
-		TreeNode root = new TreeNode(temp.GetFeatureCount());
+		TreeNode root = null;
+		if(temp.GetFeaturesHead().GetFeature().equals("real"))
+			root = new TreeNode(2);
+		else
+			root = new TreeNode(temp.GetFeatureCount());
 		root.type = TreeNode.Type.ATTRIBUTE;
 		root.SetAttribute(temp);
 		
 		Feature feature_walker = root.GetAttribute().GetFeaturesHead();
 		Example example_walker = examples.GetExamplesHead();
 		Value value_walker = null;
-		
+
 		Attributes attributes_subset = new Attributes();
 		Attribute attributes_walker = attributes.GetAttributesHead();
-		while(attributes_walker != null)
+		
+		if(root.GetAttribute().GetFeaturesHead().GetFeature().equals("real"))
 		{
-			if(!attributes_walker.GetAttribute().equals(root.GetAttribute().GetAttribute()))
+			attributes_subset = attributes;
+		}
+		else
+		{
+			while(attributes_walker != null)
 			{
-				Attribute at = new Attribute(attributes_walker.GetAttribute());
-				at.CopyAttribute(attributes_walker);
-				attributes_subset.AddAttribute(at);
+				if(!attributes_walker.GetAttribute().equals(root.GetAttribute().GetAttribute()))
+				{
+					Attribute at = new Attribute(attributes_walker.GetAttribute());
+					at.CopyAttribute(attributes_walker);
+					attributes_subset.AddAttribute(at);
+				}
+				
+				attributes_walker = attributes_walker.GetNext();
 			}
-			
-			attributes_walker = attributes_walker.GetNext();
 		}
 		
 		if(root.GetAttribute().GetFeaturesHead().GetFeature().equals("real"))
@@ -101,6 +114,7 @@ public class DecisionTree
 			for(int i = 0; i < 2; i++)
 			{
 				Examples examples_subset = new Examples(first_class_value, second_class_value);
+				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
 					value_walker = example_walker.GetValuesHead();
@@ -131,7 +145,23 @@ public class DecisionTree
 					example_walker = example_walker.GetNext();
 				}
 				
-				if(examples_subset.GetExamplesCount() < m_threshold)
+				if(examples_subset.GetFirstClassCount() == examples_subset.GetExamplesCount())
+				{
+					TreeNode leaf = new TreeNode(0);
+					leaf.type = TreeNode.Type.CLASS_VALUE;
+					leaf.SetClassValue(first_class_value);
+					root.SetSuccessor(leaf, i);
+				}
+
+				else if(examples_subset.GetSecondClassCount() == examples_subset.GetExamplesCount())
+				{
+					TreeNode leaf = new TreeNode(0);
+					leaf.type = TreeNode.Type.CLASS_VALUE;
+					leaf.SetClassValue(second_class_value);
+					root.SetSuccessor(leaf, i);
+				}
+				
+				else if(examples_subset.GetExamplesCount() < m_threshold)
 				{
 					TreeNode leaf = new TreeNode(0);
 					leaf.type = TreeNode.Type.CLASS_VALUE;
@@ -155,6 +185,7 @@ public class DecisionTree
 			for(int j = 0; j < root.GetAttribute().GetFeatureCount(); j++)
 			{
 				Examples examples_subset = new Examples(first_class_value, second_class_value);
+				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
 					value_walker = example_walker.GetValuesHead();
@@ -172,8 +203,25 @@ public class DecisionTree
 					
 					example_walker = example_walker.GetNext();
 				}
-								
-				if(examples_subset.GetExamplesCount() < m_threshold)
+					
+
+				if(examples_subset.GetFirstClassCount() == examples_subset.GetExamplesCount())
+				{
+					TreeNode leaf = new TreeNode(0);
+					leaf.type = TreeNode.Type.CLASS_VALUE;
+					leaf.SetClassValue(first_class_value);
+					root.SetSuccessor(leaf, j);
+				}
+
+				else if(examples_subset.GetSecondClassCount() == examples_subset.GetExamplesCount())
+				{
+					TreeNode leaf = new TreeNode(0);
+					leaf.type = TreeNode.Type.CLASS_VALUE;
+					leaf.SetClassValue(second_class_value);
+					root.SetSuccessor(leaf, j);
+				}
+				
+				else if(examples_subset.GetExamplesCount() < m_threshold)
 				{
 					TreeNode leaf = new TreeNode(0);
 					leaf.type = TreeNode.Type.CLASS_VALUE;
@@ -189,6 +237,8 @@ public class DecisionTree
 				{
 					root.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), j);
 				}
+				
+				feature_walker = feature_walker.GetNext();
 			}
 		}
 				

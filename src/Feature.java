@@ -121,16 +121,35 @@ public class Feature
 		}while(swap);
 		
 		
-		for(int j = 0; j < real_features.length - 1; j++)
+//		for(int j = 0; j < real_features.length - 1; j++)
+//		{
+//			if(!real_features[j].GetClassValue().equals(real_features[j+1].GetClassValue()))
+//			{
+//				if(real_features[j].GetValue() != real_features[j+1].GetValue())
+//				{
+//					Midpoint temp = new Midpoint((real_features[j].GetValue()+real_features[j+1].GetValue())/2);
+//					AddMidpoint(temp);
+//				}
+//			}
+//		}
+		boolean found = false;
+		
+		for (int j = 0; j < real_features.length - 1; j++)
 		{
 			if(!real_features[j].GetClassValue().equals(real_features[j+1].GetClassValue()))
 			{
-				if(real_features[j].GetValue() != real_features[j+1].GetValue())
+				for(int k = j; k >= 0 && !found; k--)
 				{
-					Midpoint temp = new Midpoint((real_features[j].GetValue()+real_features[j+1].GetValue())/2);
-					AddMidpoint(temp);
+					if(real_features[j+1].GetValue() > real_features[k].GetValue())
+					{
+						Midpoint temp = new Midpoint((real_features[j+1].GetValue()+real_features[k].GetValue())/2);
+						AddMidpoint(temp);
+						found = true;
+					}
 				}
 			}
+			
+			found = false;
 		}
 		
 		return midpoints_head;
