@@ -4,6 +4,7 @@ public class TreeNode
 {
 	private TreeNode[] successors = null;
 	private Attribute attribute = null;
+	private Feature feature = null;
 	private int first_class_value = 0;
 	private int second_class_value = 0;
 	private String class_value = null;
@@ -67,5 +68,15 @@ public class TreeNode
 	public void SetAttribute(Attribute attribute)
 	{
 		this.attribute = attribute;
+	}
+	
+	public Feature GetFeature()
+	{
+		return feature;
+	}
+	
+	public void SetFeature(Feature feature)
+	{
+		this.feature = feature;
 	}
 }

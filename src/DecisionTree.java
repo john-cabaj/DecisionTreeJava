@@ -15,20 +15,6 @@ public class DecisionTree
 		String first_class_value = parser.GetFirstClassValue();
 		String second_class_value = parser.GetSecondClassValue();
 		
-//		Example example_walker = examples.GetExamplesHead();
-//		int first_class_value_count = 0, second_class_value_count = 0, count = 0;
-//		while(example_walker != null)
-//		{
-//			if(example_walker.GetClassValue().equals(first_class_value))
-//				first_class_value_count++;
-//			else if(example_walker.GetClassValue().equals(second_class_value))
-//				second_class_value_count++;
-//			
-//			count++;
-//			
-//			example_walker = example_walker.GetNext();
-//		}
-		
 		if(examples.GetFirstClassCount() == examples.GetExamplesCount())
 		{
 			TreeNode root = new TreeNode(0);
@@ -113,6 +99,11 @@ public class DecisionTree
 		{
 			for(int i = 0; i < 2; i++)
 			{
+				TreeNode feature = new TreeNode(1);
+				feature.type = TreeNode.Type.FEATURE;
+				feature.SetFeature(feature_walker);
+				root.SetSuccessor(feature, i);
+				
 				Examples examples_subset = new Examples(first_class_value, second_class_value);
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
@@ -150,7 +141,7 @@ public class DecisionTree
 					TreeNode leaf = new TreeNode(0);
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(first_class_value);
-					root.SetSuccessor(leaf, i);
+					feature.SetSuccessor(leaf, 0);
 				}
 
 				else if(examples_subset.GetSecondClassCount() == examples_subset.GetExamplesCount())
@@ -158,7 +149,7 @@ public class DecisionTree
 					TreeNode leaf = new TreeNode(0);
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(second_class_value);
-					root.SetSuccessor(leaf, i);
+					feature.SetSuccessor(leaf, 0);
 				}
 				
 				else if(examples_subset.GetExamplesCount() < m_threshold)
@@ -171,12 +162,12 @@ public class DecisionTree
 					else
 						leaf.SetClassValue(second_class_value);
 					
-					root.SetSuccessor(leaf, i);
+					feature.SetSuccessor(leaf, 0);
 				}
 
 				else
 				{
-					root.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), i);
+					feature.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), 0);
 				}
 			}
 		}
@@ -184,6 +175,11 @@ public class DecisionTree
 		{
 			for(int j = 0; j < root.GetAttribute().GetFeatureCount(); j++)
 			{
+				TreeNode feature = new TreeNode(1);
+				feature.type = TreeNode.Type.FEATURE;
+				feature.SetFeature(feature_walker);
+				root.SetSuccessor(feature, j);
+				
 				Examples examples_subset = new Examples(first_class_value, second_class_value);
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
@@ -210,7 +206,7 @@ public class DecisionTree
 					TreeNode leaf = new TreeNode(0);
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(first_class_value);
-					root.SetSuccessor(leaf, j);
+					feature.SetSuccessor(leaf, 0);
 				}
 
 				else if(examples_subset.GetSecondClassCount() == examples_subset.GetExamplesCount())
@@ -218,7 +214,7 @@ public class DecisionTree
 					TreeNode leaf = new TreeNode(0);
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(second_class_value);
-					root.SetSuccessor(leaf, j);
+					feature.SetSuccessor(leaf, 0);
 				}
 				
 				else if(examples_subset.GetExamplesCount() < m_threshold)
@@ -231,11 +227,11 @@ public class DecisionTree
 					else
 						leaf.SetClassValue(second_class_value);
 					
-					root.SetSuccessor(leaf, j);
+					feature.SetSuccessor(leaf, 0);
 				}
 				else
 				{
-					root.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), j);
+					feature.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), 0);
 				}
 				
 				feature_walker = feature_walker.GetNext();
@@ -448,6 +444,11 @@ public class DecisionTree
 	private static double midpoint(double sum, double count)
 	{
 		return sum/count;
+	}
+	
+	private void PrintTree(TreeNode root)
+	{
+		
 	}
 
 }
