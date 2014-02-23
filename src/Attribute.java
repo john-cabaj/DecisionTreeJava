@@ -71,4 +71,11 @@ public class Attribute
 	{
 		return features_tail;
 	}
+	
+	public void CopyAttribute(Attribute attribute)
+	{
+		features_head = attribute.features_head;
+		features_tail = attribute.features_tail;
+		feature_count = attribute.feature_count;
+	}
 }

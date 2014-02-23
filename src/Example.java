@@ -10,7 +10,7 @@ public class Example
 	private int values_count = 0;
 	private Value held_value;
 	
-	public void AddValues(String value, Attribute attribute)
+	public void AddValues(String value, String attribute)
 	{
 		Value temp = new Value(value, attribute);
 		if(values_head == null)
@@ -81,5 +81,13 @@ public class Example
 	public void SetHeldValue(Value held_value)
 	{
 		this.held_value = held_value;
+	}
+	
+	public void CopyExample(Example example)
+	{
+		values_head = example.values_head;
+		values_tail = example.values_tail;
+		class_value = example.class_value;
+		values_count = example.values_count;
 	}
 }

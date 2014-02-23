@@ -2,12 +2,12 @@
 //value class
 public class Value 
 {
-	private Attribute attribute = null;
+	private String attribute = null;
 	private String value = null;
 	private Value next = null;
 	private Value prev = null;
 	
-	public Value(String value, Attribute attribute)
+	public Value(String value, String attribute)
 	{
 		this.value = value;
 		this.attribute = attribute;
@@ -38,12 +38,12 @@ public class Value
 		this.prev = prev;
 	}
 	
-	public Attribute GetAttribute()
+	public String GetAttribute()
 	{
 		return attribute;
 	}
 	
-	public void SetAttribute(Attribute attribute)
+	public void SetAttribute(String attribute)
 	{
 		this.attribute = attribute;
 	}

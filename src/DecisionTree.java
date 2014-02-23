@@ -81,57 +81,117 @@ public class DecisionTree
 		Feature feature_walker = root.GetAttribute().GetFeaturesHead();
 		Example example_walker = examples.GetExamplesHead();
 		Value value_walker = null;
-		for(int i = 0; i < root.GetAttribute().GetFeatureCount(); i++)
+		
+		Attributes attributes_subset = new Attributes();
+		Attribute attributes_walker = attributes.GetAttributesHead();
+		while(attributes_walker != null)
 		{
-			Examples examples_subset = new Examples(first_class_value, second_class_value);
-			while(example_walker != null)
+			if(!attributes_walker.GetAttribute().equals(root.GetAttribute().GetAttribute()))
 			{
-				value_walker = example_walker.GetValuesHead();
-				while(!value_walker.GetAttribute().equals(feature_walker.GetAttribute()))
-				{
-					value_walker = value_walker.GetNext();
-				}
-				
-				if(value_walker.GetValue().equals(feature_walker.GetFeature()))
-				{
-					examples_subset.AddExample(example_walker);
-				}
-				
-				example_walker = example_walker.GetNext();
+				Attribute at = new Attribute(attributes_walker.GetAttribute());
+				at.CopyAttribute(attributes_walker);
+				attributes_subset.AddAttribute(at);
 			}
 			
-			
-			
-			if(examples_subset.GetExamplesCount() < m_threshold)
+			attributes_walker = attributes_walker.GetNext();
+		}
+		
+		if(root.GetAttribute().GetFeaturesHead().GetFeature().equals("real"))
+		{
+			for(int i = 0; i < 2; i++)
 			{
-				TreeNode leaf = new TreeNode(0);
-				leaf.type = TreeNode.Type.CLASS_VALUE;
-				example_walker = examples.GetExamplesHead();
-				int first_class_value_count = 0, second_class_value_count = 0;
+				Examples examples_subset = new Examples(first_class_value, second_class_value);
 				while(example_walker != null)
 				{
-					if(example_walker.GetClassValue().equals(first_class_value))
-						first_class_value_count++;
-					else if(example_walker.GetClassValue().equals(second_class_value))
-						second_class_value_count++;
+					value_walker = example_walker.GetValuesHead();
+					while(!value_walker.GetAttribute().equals((feature_walker.GetAttribute().GetAttribute())))
+					{
+						value_walker = value_walker.GetNext();
+					}
+					
+					if(i == 0)
+					{
+						if(Double.parseDouble(value_walker.GetValue()) <= root.GetAttribute().GetFeaturesHead().GetMidpoint().Midpoint())
+						{
+							Example ex = new Example();
+							ex.CopyExample(example_walker);
+							examples_subset.AddExample(ex);
+						}
+					}
+					else if(i == 1)
+					{
+						if(Double.parseDouble(value_walker.GetValue()) > root.GetAttribute().GetFeaturesHead().GetMidpoint().Midpoint())
+						{
+							Example ex = new Example();
+							ex.CopyExample(example_walker);
+							examples_subset.AddExample(ex);
+						}
+					}
 					
 					example_walker = example_walker.GetNext();
 				}
 				
-				if(first_class_value_count >= second_class_value_count)
-					leaf.SetClassValue(first_class_value);
+				if(examples_subset.GetExamplesCount() < m_threshold)
+				{
+					TreeNode leaf = new TreeNode(0);
+					leaf.type = TreeNode.Type.CLASS_VALUE;
+					
+					if(examples_subset.GetFirstClassCount() >= examples_subset.GetSecondClassCount())
+						leaf.SetClassValue(first_class_value);
+					else
+						leaf.SetClassValue(second_class_value);
+					
+					root.SetSuccessor(leaf, i);
+				}
+
 				else
-					leaf.SetClassValue(second_class_value);
-				
-				root.SetSuccessor(leaf, i);
-			}
-			else
-			{
-				
+				{
+					root.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), i);
+				}
 			}
 		}
-		
-		
+		else
+		{
+			for(int j = 0; j < root.GetAttribute().GetFeatureCount(); j++)
+			{
+				Examples examples_subset = new Examples(first_class_value, second_class_value);
+				while(example_walker != null)
+				{
+					value_walker = example_walker.GetValuesHead();
+					while(!value_walker.GetAttribute().equals(feature_walker.GetAttribute().GetAttribute()))
+					{
+						value_walker = value_walker.GetNext();
+					}
+					
+					if(value_walker.GetValue().equals(feature_walker.GetFeature()))
+					{
+						Example ex = new Example();
+						ex.CopyExample(example_walker);
+						examples_subset.AddExample(ex);
+					}
+					
+					example_walker = example_walker.GetNext();
+				}
+								
+				if(examples_subset.GetExamplesCount() < m_threshold)
+				{
+					TreeNode leaf = new TreeNode(0);
+					leaf.type = TreeNode.Type.CLASS_VALUE;
+					
+					if(examples_subset.GetFirstClassCount() >= examples_subset.GetSecondClassCount())
+						leaf.SetClassValue(first_class_value);
+					else
+						leaf.SetClassValue(second_class_value);
+					
+					root.SetSuccessor(leaf, j);
+				}
+				else
+				{
+					root.SetSuccessor(BuildTree(attributes_subset, examples_subset, first_class_value, second_class_value, m_threshold), j);
+				}
+			}
+		}
+				
 		return root;
 	}
 	
@@ -142,22 +202,7 @@ public class DecisionTree
 		double first_class_prob = 0;
 		double second_class_prob = 0;
 		double max = 0;
-		
-//		Example example_walker = examples.GetExamplesHead();
-//		double first_class_value_count = 0, second_class_value_count = 0, count = 0;
-//		
-//		while(example_walker != null)
-//		{
-//			if(example_walker.GetClassValue().equals(first_class_value))
-//				first_class_value_count++;
-//			else if(example_walker.GetClassValue().equals(second_class_value))
-//				second_class_value_count++;
-//			
-//			count++;
-//			
-//			example_walker = example_walker.GetNext();
-//		}
-		
+				
 		if(examples.GetExamplesCount() > 0)
 		{
 			first_class_prob = (double)examples.GetFirstClassCount()/(double)examples.GetExamplesCount();
@@ -173,7 +218,6 @@ public class DecisionTree
 		double left_branch_first_value_prob = 0, left_branch_second_value_prob = 0, right_branch_first_value_prob = 0, right_branch_second_value_prob = 0;
 		double left_entropy = 0, right_entropy = 0;
 		double info_gain = 0;
-		double mid_sum = 0, mid_count = 0, mid = 0;
 		Example example_walker = examples.GetExamplesHead();
 		
 		while(attribute_walker != null)
@@ -183,78 +227,100 @@ public class DecisionTree
 			if(feature_walker.GetFeature().equals("real"))
 			{
 				example_walker = examples.GetExamplesHead();
-				while(example_walker != null)
+				feature_walker.InitializeRealFeatures(examples.GetExamplesCount());
+				for(int i = 0; i < examples.GetExamplesCount(); i++)
 				{
 					value_walker = example_walker.GetValuesHead();
-					while(!value_walker.GetAttribute().equals(attribute_walker))
+
+					while(!value_walker.GetAttribute().equals(attribute_walker.GetAttribute()))
 					{
 						value_walker = value_walker.GetNext();
 					}
 					
-					mid_sum += Double.parseDouble(value_walker.GetValue());
-					mid_count++;
-					example_walker.SetHeldValue(value_walker);
+					//if(value_walker != null)
+					//{
+						RealFeature temp = new RealFeature(Double.parseDouble(value_walker.GetValue()), example_walker.GetClassValue());
+						feature_walker.AddRealFeature(temp, i);
+						example_walker.SetHeldValue(value_walker);
+					//}
 					
 					example_walker = example_walker.GetNext();
 				}
 				
-				mid = midpoint(mid_sum, mid_count);
+				Midpoint midpoints = feature_walker.GetMidpoints();
 				
-				example_walker = examples.GetExamplesHead();
-				while(example_walker != null)
+				Midpoint midpoints_walker = midpoints;
+				while(midpoints_walker != null)
 				{
-					if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.GetClassValue().equals(first_class_value))
+					example_walker = examples.GetExamplesHead();
+					while(example_walker != null)
 					{
-						left_branch_first_value++;
-						left_branch_count++;
+						value_walker = example_walker.GetValuesHead();
+						while(!value_walker.GetAttribute().equals(attribute_walker.GetAttribute()))
+						{
+							value_walker = value_walker.GetNext();
+						}
+						
+						if(Double.parseDouble(value_walker.GetValue()) <= midpoints_walker.Midpoint() && example_walker.GetClassValue().equals(first_class_value))
+						{
+							left_branch_first_value++;
+							left_branch_count++;
+						}
+						else if(Double.parseDouble(value_walker.GetValue()) <= midpoints_walker.Midpoint() && example_walker.GetClassValue().equals(second_class_value))
+						{
+							left_branch_second_value++;
+							left_branch_count++;
+						}
+						else if(Double.parseDouble(value_walker.GetValue()) > midpoints_walker.Midpoint() && example_walker.GetClassValue().equals(first_class_value))
+						{
+							right_branch_first_value++;
+							right_branch_count++;
+						}
+						else if(Double.parseDouble(value_walker.GetValue()) > midpoints_walker.Midpoint() && example_walker.GetClassValue().equals(second_class_value))
+						{
+							right_branch_second_value++;
+							right_branch_count++;
+						}
+						
+						example_walker = example_walker.GetNext();
 					}
-					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) <= mid) && example_walker.GetClassValue().equals(second_class_value))
+					
+					if(left_branch_count > 0)
 					{
-						left_branch_second_value++;
-						left_branch_count++;
+						left_branch_first_value_prob = left_branch_first_value/left_branch_count;
+						left_branch_second_value_prob = left_branch_second_value/left_branch_count;
 					}
-					else if((Double.parseDouble(example_walker.GetHeldValue().GetValue()) > mid) && example_walker.GetClassValue().equals(first_class_value))
+					if(right_branch_count > 0)
 					{
-						right_branch_first_value++;
-						right_branch_count++;
+						right_branch_first_value_prob = right_branch_first_value/right_branch_count;
+						right_branch_second_value_prob = right_branch_second_value/right_branch_count;
 					}
-					else
-					{
-						right_branch_second_value++;
-						right_branch_count++;
-					}
-																			
-					example_walker = example_walker.GetNext();
-				}
-
-				if(left_branch_count > 0)
-				{
-					left_branch_first_value_prob = left_branch_first_value/left_branch_count;
-					left_branch_second_value_prob = left_branch_second_value/left_branch_count;
-				}
-				if(right_branch_count > 0)
-				{
-					right_branch_first_value_prob = right_branch_first_value/right_branch_count;
-					right_branch_second_value_prob = right_branch_second_value/right_branch_count;
-				}
+					
+					left_entropy = -(left_branch_first_value_prob)*log2(left_branch_first_value_prob) - (left_branch_second_value_prob)*log2(left_branch_second_value_prob);
+					right_entropy = -(right_branch_first_value_prob)*log2(right_branch_first_value_prob) - (right_branch_second_value_prob)*log2(right_branch_second_value_prob);
+					
+					if(examples.GetExamplesCount() > 0)
+						info_gain = entropy - (left_branch_count/examples.GetExamplesCount())*left_entropy - (right_branch_count/examples.GetExamplesCount())*right_entropy;
 				
-				left_entropy = -(left_branch_first_value_prob)*log2(left_branch_first_value_prob) - (left_branch_second_value_prob)*log2(left_branch_second_value_prob);
-				right_entropy = -(right_branch_first_value_prob)*log2(right_branch_first_value_prob) - (right_branch_second_value_prob)*log2(right_branch_second_value_prob);
-				
-				if(examples.GetExamplesCount() > 0)
-					info_gain = entropy - (left_branch_count/examples.GetExamplesCount())*left_entropy - (right_branch_count/examples.GetExamplesCount())*right_entropy;
-				
-				if(info_gain > max)
-				{
-					max = info_gain;
-					max_gain = attribute_walker;
+					if(info_gain > max)
+					{
+						max = info_gain;
+						max_gain = attribute_walker;
+						feature_walker.SetMidpoint(midpoints_walker);
+					}
+					
+					left_branch_first_value = 0;
+					left_branch_second_value = 0;
+					right_branch_first_value = 0;
+					right_branch_second_value = 0;
+					left_branch_count = 0;
+					right_branch_count = 0;
+					
+					midpoints_walker = midpoints_walker.GetNext();
 				}
 			}
 			else
 			{
-				if(attribute_walker.GetAttribute().equals("thal"))
-					System.out.println("HERE");
-				
 				double[] entropies = new double[attribute_walker.GetFeatureCount()];
 				double first_class_value_count = 0, second_class_value_count = 0, count = 0;
 				double branch_count = 0;
@@ -265,7 +331,7 @@ public class DecisionTree
 					while(example_walker != null)
 					{
 						value_walker = example_walker.GetValuesHead();
-						while(!value_walker.GetAttribute().equals(attribute_walker))
+						while(value_walker != null && !value_walker.GetAttribute().equals(attribute_walker.GetAttribute()))
 						{
 							value_walker = value_walker.GetNext();
 						}
@@ -323,7 +389,10 @@ public class DecisionTree
 	
 	private static double log2(double input)
 	{
-		return (Math.log10(input)/Math.log10(2));
+		if(input == 0)
+			return 0;
+		else
+			return (Math.log10(input)/Math.log10(2));
 	}
 	
 	private static double midpoint(double sum, double count)
