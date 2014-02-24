@@ -1,5 +1,4 @@
 import java.io.*;
-import java.math.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -7,7 +6,6 @@ import java.util.Random;
 //decision tree class
 public class DecisionTree 
 {
-
 	//main method
 	public static void main(String[] args) 
 	{
@@ -18,14 +16,25 @@ public class DecisionTree
 			try
 			{
 				int m = Integer.parseInt(args[2]);
+				ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
+				ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
+				train_parser.ParseFile();
+				test_parser.ParseFile();
+				
+				Examples train_examples = train_parser.GetExamples();
+				Attributes train_attributes = train_parser.GetAttributes();
+				Examples test_examples = test_parser.GetExamples();
+				String first_class_value = train_parser.GetFirstClassValue();
+				String second_class_value = train_parser.GetSecondClassValue();
+				
 				if(args.length == 4)
 				{
 					if(args[3].toLowerCase().equals("learning_curve"))
-						LearningCurve(args, m);
+						LearningCurve(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 				}
 				else
 				{
-					BuildDecisionTree(args, m);
+					BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
 				}
 				
 			}
@@ -497,7 +506,7 @@ public class DecisionTree
 		}
 	}
 	
-	public static void Evaluate(TreeNode root, Examples examples)
+	public static void PrintAllEvaluate(TreeNode root, Examples examples)
 	{
 		int correct = 0;
 		Example example_walker = examples.GetExamplesHead();
@@ -510,6 +519,20 @@ public class DecisionTree
 			example_walker = example_walker.GetNext();
 		}
 		System.out.println(correct + " " + examples.GetExamplesCount());
+	}
+	
+	public static int Evaluate(TreeNode root, Examples examples)
+	{
+		int correct = 0;
+		Example example_walker = examples.GetExamplesHead();
+		while(example_walker != null)
+		{		
+			String class_value = GetClassValue(root, example_walker);
+			if(class_value.equals(example_walker.GetClassValue()))
+				correct++;
+			example_walker = example_walker.GetNext();
+		}
+		return correct;
 	}
 	
 	public static String GetClassValue(TreeNode root, Example example)
@@ -557,18 +580,9 @@ public class DecisionTree
 		return class_value;
 	}
 	
-	public static void BuildDecisionTree(String[] args, int m)
-	{
-		ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
-		ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
-		train_parser.ParseFile();
-		test_parser.ParseFile();
-		
-		Examples train_examples = train_parser.GetExamples();
-		Attributes train_attributes = train_parser.GetAttributes();
-		Examples test_examples = test_parser.GetExamples();
-		String first_class_value = train_parser.GetFirstClassValue();
-		String second_class_value = train_parser.GetSecondClassValue();
+	public static int BuildDecisionTree(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m, boolean learning_curve)
+	{		
+		int correct = 0;
 		
 		if(train_examples.GetFirstClassCount() == train_examples.GetExamplesCount())
 		{
@@ -609,23 +623,22 @@ public class DecisionTree
 		{
 			TreeNode root = null;
 			root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, m);
-			PrintTree(root, 0);
-			Evaluate(root, test_examples);
+			if(!learning_curve)
+			{
+				PrintTree(root, 0);
+				PrintAllEvaluate(root, test_examples);
+			}
+			else
+			{
+				correct = Evaluate(root, test_examples);
+			}
 		}
+		
+		return correct;
 	}
 	
-	public static void LearningCurve(String[] args, int m)
+	public static void LearningCurve(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m)
 	{
-		ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
-		ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
-		train_parser.ParseFile();
-		test_parser.ParseFile();
-		
-		Examples train_examples = train_parser.GetExamples();
-		Attributes train_attributes = train_parser.GetAttributes();
-		Examples test_examples = test_parser.GetExamples();
-		String first_class_value = train_parser.GetFirstClassValue();
-		String second_class_value = train_parser.GetSecondClassValue();
 		double average = 0, min = 1, max = 0;
 		double sum = 0, count = 0;
 		int eval_val = 0;
@@ -633,13 +646,11 @@ public class DecisionTree
 		for(int i = 0; i < 10; i++)
 		{
 			Examples temp = StratifiedSampling(train_examples, 25, first_class_value, second_class_value);
-			eval_val = RunEval(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
+			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
 			sum+=eval_val;
 			count++;
-			if(((double)eval_val/(double)test_examples.GetExamplesCount()) < min)
-				min = (double)eval_val/(double)test_examples.GetExamplesCount();
-			if(((double)eval_val/(double)test_examples.GetExamplesCount()) > max)
-				max = (double)eval_val/(double)test_examples.GetExamplesCount();
+			min = Min(min, (double)eval_val/(double)test_examples.GetExamplesCount());
+			max = Max(max, (double)eval_val/(double)test_examples.GetExamplesCount());
 		}
 		average = (double)sum/(double)count;
 		System.out.println("*************************TRAINING SIZE: 25*************************");
@@ -655,13 +666,11 @@ public class DecisionTree
 		for(int i = 0; i < 10; i++)
 		{
 			Examples temp = StratifiedSampling(train_examples, 50, first_class_value, second_class_value);
-			eval_val = RunEval(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
+			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
 			sum+=eval_val;
 			count++;
-			if(((double)eval_val/(double)test_examples.GetExamplesCount()) < min)
-				min = (double)eval_val/(double)test_examples.GetExamplesCount();
-			if(((double)eval_val/(double)test_examples.GetExamplesCount()) > max)
-				max = (double)eval_val/(double)test_examples.GetExamplesCount();
+			min = Min(min, (double)eval_val/(double)test_examples.GetExamplesCount());
+			max = Max(max, (double)eval_val/(double)test_examples.GetExamplesCount());
 		}
 		average = (double)sum/(double)count;
 		System.out.println("*************************TRAINING SIZE: 50*************************");
@@ -677,13 +686,11 @@ public class DecisionTree
 		for(int i = 0; i < 10; i++)
 		{
 			Examples temp = StratifiedSampling(train_examples, 100, first_class_value, second_class_value);
-			eval_val = RunEval(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
+			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
 			sum+=eval_val;
 			count++;
-			if(((double)eval_val/(double)test_examples.GetExamplesCount()) < min)
-				min = (double)eval_val/(double)test_examples.GetExamplesCount();
-			if(((double)eval_val/(double)test_examples.GetExamplesCount()) > max)
-				max = (double)eval_val/(double)test_examples.GetExamplesCount();
+			min = Min(min, (double)eval_val/(double)test_examples.GetExamplesCount());
+			max = Max(max, (double)eval_val/(double)test_examples.GetExamplesCount());
 		}
 		average = (double)sum/(double)count;
 		System.out.println("*************************TRAINING SIZE: 100*************************");
@@ -696,7 +703,7 @@ public class DecisionTree
 		sum = 0;
 		count = 0;
 
-		eval_val = RunEval(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
+		eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
 		sum+=eval_val;
 		count++;
 		average = (double)sum/(double)count;
@@ -774,61 +781,20 @@ public class DecisionTree
 			
 		return examples_subset;
 	}
-	
-	public static int RunEval(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m)
+
+	public static double Min(double current_min, double candidate)
 	{
-		int correct = 0;
-		
-		if(train_examples.GetFirstClassCount() == train_examples.GetExamplesCount())
-		{
-			TreeNode root = new TreeNode(0);
-			root.type = TreeNode.Type.CLASS_VALUE;
-			root.SetFirstClassValue(train_examples.GetFirstClassCount());
-			root.SetSecondClassValue(train_examples.GetSecondClassCount());
-			root.SetClassValue(first_class_value);
-		}
-		else if(train_examples.GetSecondClassCount() == train_examples.GetExamplesCount())
-		{
-			TreeNode root = new TreeNode(0);
-			root.type = TreeNode.Type.CLASS_VALUE;
-			root.SetSecondClassValue(train_examples.GetSecondClassCount());
-			root.SetFirstClassValue(train_examples.GetFirstClassCount());
-			root.SetClassValue(second_class_value);
-		}
-		else if(train_attributes.GetAttributesCount() == 0)
-		{
-			TreeNode root = new TreeNode(0);
-			
-			if(train_examples.GetFirstClassCount() >= train_examples.GetSecondClassCount())
-			{
-				root.type = TreeNode.Type.CLASS_VALUE;
-				root.SetFirstClassValue(train_examples.GetFirstClassCount());
-				root.SetSecondClassValue(train_examples.GetSecondClassCount());
-				root.SetClassValue(first_class_value);
-			}
-			else
-			{
-				root.type = TreeNode.Type.CLASS_VALUE;
-				root.SetSecondClassValue(train_examples.GetSecondClassCount());
-				root.SetFirstClassValue(train_examples.GetFirstClassCount());
-				root.SetClassValue(second_class_value);
-			}
-		}
+		if(candidate < current_min)
+			return candidate;
 		else
-		{
-			TreeNode root = null;
-			root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, m);
-			
-			Example example_walker = test_examples.GetExamplesHead();
-			while(example_walker != null)
-			{		
-				String class_value = GetClassValue(root, example_walker);
-				if(class_value.equals(example_walker.GetClassValue()))
-					correct++;
-				example_walker = example_walker.GetNext();
-			}
-		}
-		
-		return correct;
+			return current_min;
+	}
+	
+	public static double Max(double current_max, double candidate)
+	{
+		if(candidate > current_max)
+			return candidate;
+		else
+			return current_max;
 	}
 }
