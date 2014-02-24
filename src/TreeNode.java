@@ -3,8 +3,10 @@
 public class TreeNode 
 {
 	private TreeNode[] successors = null;
+	private TreeNode parent = null;
 	private Attribute attribute = null;
 	private Feature feature = null;
+	private double midpoint = 0;
 	private int first_class_value = 0;
 	private int second_class_value = 0;
 	private String class_value = null;
@@ -78,5 +80,30 @@ public class TreeNode
 	public void SetFeature(Feature feature)
 	{
 		this.feature = feature;
+	}
+	
+	public TreeNode GetParent()
+	{
+		return parent;
+	}
+	
+	public void SetParent(TreeNode parent)
+	{
+		this.parent = parent;
+	}
+	
+	public TreeNode[] GetSuccessors()
+	{
+		return successors;
+	}
+	
+	public double GetMidpoint()
+	{
+		return midpoint;
+	}
+	
+	public void SetMidpoint(double midpoint)
+	{
+		this.midpoint = midpoint;
 	}
 }

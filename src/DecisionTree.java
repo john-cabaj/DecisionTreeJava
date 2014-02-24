@@ -1,5 +1,3 @@
-import java.math.*;
-
 //decision tree class
 public class DecisionTree 
 {
@@ -54,7 +52,7 @@ public class DecisionTree
 		{
 			TreeNode root = null;
 			root = BuildTree(attributes, examples, first_class_value, second_class_value, 2);
-			System.out.println("END");
+			PrintTree(root, 0);
 		}
 	}
 	
@@ -62,7 +60,7 @@ public class DecisionTree
 	{
 		Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
 		TreeNode root = null;
-		if(temp.GetFeaturesHead().GetFeature().equals("real"))
+		if(temp.GetFeaturesHead().Feature().equals("real"))
 			root = new TreeNode(2);
 		else
 			root = new TreeNode(temp.GetFeatureCount());
@@ -76,7 +74,7 @@ public class DecisionTree
 		Attributes attributes_subset = new Attributes();
 		Attribute attributes_walker = attributes.GetAttributesHead();
 		
-		if(root.GetAttribute().GetFeaturesHead().GetFeature().equals("real"))
+		if(root.GetAttribute().GetFeaturesHead().Feature().equals("real"))
 		{
 			attributes_subset = attributes;
 		}
@@ -84,9 +82,9 @@ public class DecisionTree
 		{
 			while(attributes_walker != null)
 			{
-				if(!attributes_walker.GetAttribute().equals(root.GetAttribute().GetAttribute()))
+				if(!attributes_walker.Attribute().equals(root.GetAttribute().Attribute()))
 				{
-					Attribute at = new Attribute(attributes_walker.GetAttribute());
+					Attribute at = new Attribute(attributes_walker.Attribute());
 					at.CopyAttribute(attributes_walker);
 					attributes_subset.AddAttribute(at);
 				}
@@ -95,7 +93,7 @@ public class DecisionTree
 			}
 		}
 		
-		if(root.GetAttribute().GetFeaturesHead().GetFeature().equals("real"))
+		if(root.GetAttribute().GetFeaturesHead().Feature().equals("real"))
 		{
 			for(int i = 0; i < 2; i++)
 			{
@@ -103,13 +101,14 @@ public class DecisionTree
 				feature.type = TreeNode.Type.FEATURE;
 				feature.SetFeature(feature_walker);
 				root.SetSuccessor(feature, i);
+				feature.SetParent(root);
 				
 				Examples examples_subset = new Examples(first_class_value, second_class_value);
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
 					value_walker = example_walker.GetValuesHead();
-					while(!value_walker.GetAttribute().equals((feature_walker.GetAttribute().GetAttribute())))
+					while(!value_walker.GetAttribute().equals((feature_walker.GetAttribute().Attribute())))
 					{
 						value_walker = value_walker.GetNext();
 					}
@@ -135,6 +134,9 @@ public class DecisionTree
 					
 					example_walker = example_walker.GetNext();
 				}
+				feature.SetFirstClassValue(examples_subset.GetFirstClassCount());
+				feature.SetSecondClassValue(examples_subset.GetSecondClassCount());
+				feature.SetMidpoint(feature_walker.GetMidpoint().Midpoint());
 				
 				if(examples_subset.GetFirstClassCount() == examples_subset.GetExamplesCount())
 				{
@@ -142,6 +144,7 @@ public class DecisionTree
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(first_class_value);
 					feature.SetSuccessor(leaf, 0);
+					leaf.SetParent(feature);
 				}
 
 				else if(examples_subset.GetSecondClassCount() == examples_subset.GetExamplesCount())
@@ -150,6 +153,7 @@ public class DecisionTree
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(second_class_value);
 					feature.SetSuccessor(leaf, 0);
+					leaf.SetParent(feature);
 				}
 				
 				else if(examples_subset.GetExamplesCount() < m_threshold)
@@ -163,6 +167,7 @@ public class DecisionTree
 						leaf.SetClassValue(second_class_value);
 					
 					feature.SetSuccessor(leaf, 0);
+					leaf.SetParent(feature);
 				}
 
 				else
@@ -179,18 +184,19 @@ public class DecisionTree
 				feature.type = TreeNode.Type.FEATURE;
 				feature.SetFeature(feature_walker);
 				root.SetSuccessor(feature, j);
+				feature.SetParent(root);
 				
 				Examples examples_subset = new Examples(first_class_value, second_class_value);
 				example_walker = examples.GetExamplesHead();
 				while(example_walker != null)
 				{
 					value_walker = example_walker.GetValuesHead();
-					while(!value_walker.GetAttribute().equals(feature_walker.GetAttribute().GetAttribute()))
+					while(!value_walker.GetAttribute().equals(feature_walker.GetAttribute().Attribute()))
 					{
 						value_walker = value_walker.GetNext();
 					}
 					
-					if(value_walker.GetValue().equals(feature_walker.GetFeature()))
+					if(value_walker.GetValue().equals(feature_walker.Feature()))
 					{
 						Example ex = new Example();
 						ex.CopyExample(example_walker);
@@ -199,6 +205,8 @@ public class DecisionTree
 					
 					example_walker = example_walker.GetNext();
 				}
+				feature.SetFirstClassValue(examples_subset.GetFirstClassCount());
+				feature.SetSecondClassValue(examples_subset.GetSecondClassCount());
 					
 
 				if(examples_subset.GetFirstClassCount() == examples_subset.GetExamplesCount())
@@ -207,6 +215,7 @@ public class DecisionTree
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(first_class_value);
 					feature.SetSuccessor(leaf, 0);
+					leaf.SetParent(feature);
 				}
 
 				else if(examples_subset.GetSecondClassCount() == examples_subset.GetExamplesCount())
@@ -215,6 +224,7 @@ public class DecisionTree
 					leaf.type = TreeNode.Type.CLASS_VALUE;
 					leaf.SetClassValue(second_class_value);
 					feature.SetSuccessor(leaf, 0);
+					leaf.SetParent(feature);
 				}
 				
 				else if(examples_subset.GetExamplesCount() < m_threshold)
@@ -228,6 +238,7 @@ public class DecisionTree
 						leaf.SetClassValue(second_class_value);
 					
 					feature.SetSuccessor(leaf, 0);
+					leaf.SetParent(feature);
 				}
 				else
 				{
@@ -270,7 +281,7 @@ public class DecisionTree
 		{
 			feature_walker = attribute_walker.GetFeaturesHead();
 			
-			if(feature_walker.GetFeature().equals("real"))
+			if(feature_walker.Feature().equals("real"))
 			{
 				example_walker = examples.GetExamplesHead();
 				feature_walker.InitializeRealFeatures(examples.GetExamplesCount());
@@ -278,17 +289,14 @@ public class DecisionTree
 				{
 					value_walker = example_walker.GetValuesHead();
 
-					while(!value_walker.GetAttribute().equals(attribute_walker.GetAttribute()))
+					while(!value_walker.GetAttribute().equals(attribute_walker.Attribute()))
 					{
 						value_walker = value_walker.GetNext();
 					}
 					
-					//if(value_walker != null)
-					//{
-						RealFeature temp = new RealFeature(Double.parseDouble(value_walker.GetValue()), example_walker.GetClassValue());
-						feature_walker.AddRealFeature(temp, i);
-						example_walker.SetHeldValue(value_walker);
-					//}
+					RealFeature temp = new RealFeature(Double.parseDouble(value_walker.GetValue()), example_walker.GetClassValue());
+					feature_walker.AddRealFeature(temp, i);
+					example_walker.SetHeldValue(value_walker);
 					
 					example_walker = example_walker.GetNext();
 				}
@@ -302,7 +310,7 @@ public class DecisionTree
 					while(example_walker != null)
 					{
 						value_walker = example_walker.GetValuesHead();
-						while(!value_walker.GetAttribute().equals(attribute_walker.GetAttribute()))
+						while(!value_walker.GetAttribute().equals(attribute_walker.Attribute()))
 						{
 							value_walker = value_walker.GetNext();
 						}
@@ -368,7 +376,7 @@ public class DecisionTree
 			else
 			{
 				double[] entropies = new double[attribute_walker.GetFeatureCount()];
-				double first_class_value_count = 0, second_class_value_count = 0, count = 0;
+				double first_class_value_count = 0, second_class_value_count = 0;
 				double branch_count = 0;
 										
 				for(int i = 0; i < entropies.length; i++)
@@ -377,12 +385,12 @@ public class DecisionTree
 					while(example_walker != null)
 					{
 						value_walker = example_walker.GetValuesHead();
-						while(value_walker != null && !value_walker.GetAttribute().equals(attribute_walker.GetAttribute()))
+						while(value_walker != null && !value_walker.GetAttribute().equals(attribute_walker.Attribute()))
 						{
 							value_walker = value_walker.GetNext();
 						}
 						
-						if(value_walker.GetValue().equals(feature_walker.GetFeature()))
+						if(value_walker.GetValue().equals(feature_walker.Feature()))
 						{
 							if(example_walker.GetClassValue().equals(first_class_value))
 								first_class_value_count++;
@@ -441,14 +449,55 @@ public class DecisionTree
 			return (Math.log10(input)/Math.log10(2));
 	}
 	
-	private static double midpoint(double sum, double count)
+	private static void PrintTree(TreeNode root, int level)
 	{
-		return sum/count;
-	}
-	
-	private void PrintTree(TreeNode root)
-	{
-		
+		if(root.type == TreeNode.Type.ATTRIBUTE)
+		{
+			System.out.println();
+			for(int i = 0; i < root.GetSuccessors().length; i++)
+			{
+				for(int j = 0; j < level; j++)
+				{
+					System.out.print("|\t");
+				}
+				System.out.print(root.GetAttribute().Attribute());
+				if(root.GetAttribute().GetFeaturesHead().Feature().equals("real"))
+				{
+					if(i == 0)
+					{
+						System.out.print(" <= ");
+					}
+					else if(i == 1)
+					{
+						System.out.print(" > ");
+					}
+				}
+				else
+				{
+					System.out.print(" = ");
+				}
+				
+				PrintTree(root.GetSuccessor(i), level);
+			}
+		}
+		else if(root.type == TreeNode.Type.FEATURE)
+		{
+			if(root.GetFeature().Feature().equals("real"))
+			{
+				System.out.print(root.GetMidpoint());
+			}
+			else
+			{
+				System.out.print(root.GetFeature().Feature());
+			}
+			
+			System.out.print(" [" + root.GetFirstClassValue() + " " + root.GetSecondClassValue() + "]");
+			PrintTree(root.GetSuccessor(0), level+=1);
+		}
+		else if(root.type == TreeNode.Type.CLASS_VALUE)
+		{
+			System.out.println(": " + root.GetClassValue());
+		}
 	}
 
 }

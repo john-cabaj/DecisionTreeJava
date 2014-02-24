@@ -19,7 +19,7 @@ public class Feature
 		this.attribute = attribute;
 	}
 	
-	public String GetFeature()
+	public String Feature()
 	{
 		return feature;
 	}
