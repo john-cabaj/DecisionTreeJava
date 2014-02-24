@@ -95,6 +95,8 @@ public class DecisionTree
 		
 		if(root.GetAttribute().GetFeaturesHead().Feature().equals("real"))
 		{
+			double midpoint = root.GetAttribute().GetFeaturesHead().GetMidpoint().Midpoint();
+			
 			for(int i = 0; i < 2; i++)
 			{
 				TreeNode feature = new TreeNode(1);
@@ -115,7 +117,7 @@ public class DecisionTree
 					
 					if(i == 0)
 					{
-						if(Double.parseDouble(value_walker.GetValue()) <= root.GetAttribute().GetFeaturesHead().GetMidpoint().Midpoint())
+						if(Double.parseDouble(value_walker.GetValue()) <= midpoint)
 						{
 							Example ex = new Example();
 							ex.CopyExample(example_walker);
@@ -124,7 +126,7 @@ public class DecisionTree
 					}
 					else if(i == 1)
 					{
-						if(Double.parseDouble(value_walker.GetValue()) > root.GetAttribute().GetFeaturesHead().GetMidpoint().Midpoint())
+						if(Double.parseDouble(value_walker.GetValue()) > midpoint)
 						{
 							Example ex = new Example();
 							ex.CopyExample(example_walker);
@@ -136,7 +138,7 @@ public class DecisionTree
 				}
 				feature.SetFirstClassValue(examples_subset.GetFirstClassCount());
 				feature.SetSecondClassValue(examples_subset.GetSecondClassCount());
-				feature.SetMidpoint(feature_walker.GetMidpoint().Midpoint());
+				feature.SetMidpoint(midpoint);
 				
 				if(examples_subset.GetFirstClassCount() == examples_subset.GetExamplesCount())
 				{
@@ -283,6 +285,8 @@ public class DecisionTree
 			
 			if(feature_walker.Feature().equals("real"))
 			{
+//				if(attribute_walker.Attribute().equals("thalach"))
+//					System.out.println("HERE");
 				example_walker = examples.GetExamplesHead();
 				feature_walker.InitializeRealFeatures(examples.GetExamplesCount());
 				for(int i = 0; i < examples.GetExamplesCount(); i++)
@@ -301,7 +305,7 @@ public class DecisionTree
 					example_walker = example_walker.GetNext();
 				}
 				
-				Midpoint midpoints = feature_walker.GetMidpoints();
+				Midpoint midpoints = feature_walker.GetMidpoints(first_class_value, second_class_value);
 				
 				Midpoint midpoints_walker = midpoints;
 				while(midpoints_walker != null)

@@ -12,6 +12,9 @@ public class Feature
 	private int midpoints_count = 0;
 	private int real_features_count = 0;
 	private Midpoint midpoint = null;
+	private UniqueReal unique_reals_head = null;
+	private UniqueReal unique_reals_tail = null;
+	private int unique_reals_count = 0;
 	
 	public Feature(String feature, Attribute attribute)
 	{
@@ -97,12 +100,32 @@ public class Feature
 		midpoints_count++;
 	}
 	
-	public Midpoint GetMidpoints()
+	public void AddUniqueReal(UniqueReal unique_real)
+	{
+		if(unique_reals_head == null)
+		{
+			unique_reals_head = unique_real;
+			unique_reals_tail = unique_real;
+		}
+		else
+		{
+			unique_reals_tail.SetNext(unique_real);
+			unique_real.SetPrev(unique_reals_tail);
+			unique_reals_tail = unique_real;
+		}
+		
+		unique_reals_count++;
+	}
+	
+	public Midpoint GetMidpoints(String first_class_value, String second_class_value)
 	{
 		boolean swap = false;
 		midpoints_head = null;
 		midpoints_tail = null;
 		midpoints_count = 0;
+		unique_reals_head = null;
+		unique_reals_tail = null;
+		unique_reals_count = 0;
 		
 		do
 		{
@@ -120,37 +143,125 @@ public class Feature
 			
 		}while(swap);
 		
-		
-//		for(int j = 0; j < real_features.length - 1; j++)
+//		System.out.println(this.feature);
+//		
+//		for(int x = 0; x < real_features.length; x++)
 //		{
-//			if(!real_features[j].GetClassValue().equals(real_features[j+1].GetClassValue()))
-//			{
-//				if(real_features[j].GetValue() != real_features[j+1].GetValue())
-//				{
-//					Midpoint temp = new Midpoint((real_features[j].GetValue()+real_features[j+1].GetValue())/2);
-//					AddMidpoint(temp);
-//				}
-//			}
+//			System.out.println(real_features[x].GetClassValue() + " " + real_features[x].GetValue());
 //		}
-		boolean found = false;
 		
-		for (int j = 0; j < real_features.length - 1; j++)
+		for(RealFeature rf : real_features)
 		{
-			if(!real_features[j].GetClassValue().equals(real_features[j+1].GetClassValue()))
+			if(unique_reals_tail != null)
 			{
-				for(int k = j; k >= 0 && !found; k--)
+				if(unique_reals_tail.GetValue() != rf.GetValue())
 				{
-					if(real_features[j+1].GetValue() > real_features[k].GetValue())
-					{
-						Midpoint temp = new Midpoint((real_features[j+1].GetValue()+real_features[k].GetValue())/2);
-						AddMidpoint(temp);
-						found = true;
-					}
+					UniqueReal temp =  new UniqueReal(rf.GetValue());
+					AddUniqueReal(temp);
+				}
+			}
+			else
+			{
+				UniqueReal temp =  new UniqueReal(rf.GetValue());
+				AddUniqueReal(temp);
+			}
+		}
+		
+		UniqueReal unique_reals_walker = unique_reals_head;
+		boolean label_change = false;
+		boolean found = false;
+		int[] lower_bound_count = new int[2];
+		int[] upper_bound_count = new int[2];
+		int next_index = 0;
+		
+		while(unique_reals_walker.GetNext() != null)
+		{
+			double lower_bound = 0, upper_bound = 0;
+			lower_bound = unique_reals_walker.GetValue();
+			upper_bound = unique_reals_walker.GetNext().GetValue();
+			
+			for(int j = next_index; j < real_features.length && !found; j++)
+			{
+				if(real_features[j].GetValue() > upper_bound)
+				{
+					found = true;
+					next_index = j - 1;
+					if(next_index < 0)
+						System.out.println("HERE");
+				}
+				if(real_features[j].GetValue() == lower_bound)
+				{
+					if(real_features[j].GetClassValue().equals(first_class_value))
+						lower_bound_count[0]++;
+					else if(real_features[j].GetClassValue().equals(second_class_value))
+						lower_bound_count[1]++;
+				}
+				else if(real_features[j].GetValue() == upper_bound)
+				{
+					if(real_features[j].GetClassValue().equals(first_class_value))
+						upper_bound_count[0]++;
+					else if(real_features[j].GetClassValue().equals(second_class_value))
+						upper_bound_count[1]++;
 				}
 			}
 			
+			if(lower_bound_count[0] > 0 && upper_bound_count[1] > 0)
+			{					
+				Midpoint temp = new Midpoint((lower_bound+upper_bound)/2);
+				AddMidpoint(temp);
+			}
+			else if(lower_bound_count[1] > 0 && upper_bound_count[0] > 0)
+			{
+				Midpoint temp = new Midpoint((lower_bound+upper_bound)/2);
+				AddMidpoint(temp);
+			}
+			
 			found = false;
+			unique_reals_walker = unique_reals_walker.GetNext();
 		}
+		
+		//boolean found = false;
+		
+		
+		
+		
+//		for (int j = 0; j < real_features.length - 1; j++)
+//		{
+//			if(real_features[j].GetValue() < real_features[j+1].GetValue())
+//			{
+//				for(int k = j; k >= 0 && !found; k--)
+//				{
+//					if(!real_features[j+1].GetClassValue().equals(real_features[k].GetClassValue()))
+//					{
+//						Midpoint temp = new Midpoint((real_features[j+1].GetValue()+real_features[k].GetValue())/2);
+//						AddMidpoint(temp);
+//						found = true;
+//					}
+//				}
+//			}
+//			
+//			found = false;
+//		}
+		
+		
+		
+//		for (int j = 0; j < real_features.length - 1; j++)
+//		{
+//			if(!real_features[j].GetClassValue().equals(real_features[j+1].GetClassValue()))
+//			{
+//				for(int k = j; k >= 0 && !found; k--)
+//				{
+//					if(real_features[j+1].GetValue() > real_features[k].GetValue())
+//					{
+//						Midpoint temp = new Midpoint((real_features[j+1].GetValue()+real_features[k].GetValue())/2);
+//						AddMidpoint(temp);
+//						found = true;
+//					}
+//				}
+//			}
+//			
+//			found = false;
+//		}
 		
 		return midpoints_head;
 	}
