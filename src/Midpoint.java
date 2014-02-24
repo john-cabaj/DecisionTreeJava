@@ -31,7 +31,7 @@ public class Midpoint
 		this.prev = prev;
 	}
 	
-	public double Midpoint()
+	public double MidpointValue()
 	{
 		return midpoint;
 	}

@@ -57,7 +57,7 @@ public class ARFF
 					
 					for(int i = 0; i < data_tokens.length - 1; i++)
 					{
-						ex.AddValues(data_tokens[i], attribute_walker.Attribute());
+						ex.AddValues(data_tokens[i], attribute_walker.AttributeName());
 						attribute_walker = attribute_walker.GetNext();
 					}
 					
@@ -84,8 +84,8 @@ public class ARFF
 				{
 					data = true;
 					
-					first_class_value = attributes.GetAttributesTail().GetFeaturesHead().Feature();
-					second_class_value = attributes.GetAttributesTail().GetFeaturesTail().Feature();
+					first_class_value = attributes.GetAttributesTail().GetFeaturesHead().GetFeature();
+					second_class_value = attributes.GetAttributesTail().GetFeaturesTail().GetFeature();
 					examples = new Examples(first_class_value, second_class_value);
 					
 					attributes.RemoveTail();

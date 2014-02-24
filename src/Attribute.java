@@ -32,7 +32,7 @@ public class Attribute
 		feature_count++;
 	}
 	
-	public String Attribute()
+	public String AttributeName()
 	{
 		return attribute;
 	}
