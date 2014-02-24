@@ -7,66 +7,71 @@ public class DecisionTree
 	//main method
 	public static void main(String[] args) 
 	{
-		File f = new File(args[0]);
-		if(f.exists() && !f.isDirectory())
+		File one = new File("heart_train.arff");
+		File two = new File("heart_test.arff");
+		if(one.exists() && !one.isDirectory() && two.exists() && !two.isDirectory())
 		{
-			try
-			{
-				int m = Integer.parseInt(args[1]);
-				ARFF parser = new ARFF(args[0], ARFF.Type.TRAINING);
-				parser.ParseFile();
+//			try
+//			{
+				//int m = Integer.parseInt(args[2]);
+				ARFF train_parser = new ARFF("heart_train.arff", ARFF.Type.TRAINING);
+				ARFF test_parser = new ARFF("heart_test.arff", ARFF.Type.TESTING);
+				train_parser.ParseFile();
+				test_parser.ParseFile();
 				
-				Examples examples = parser.GetExamples();
-				Attributes attributes = parser.GetAttributes();
-				String first_class_value = parser.GetFirstClassValue();
-				String second_class_value = parser.GetSecondClassValue();
+				Examples train_examples = train_parser.GetExamples();
+				Attributes train_attributes = train_parser.GetAttributes();
+				Examples test_examples = test_parser.GetExamples();
+				String first_class_value = train_parser.GetFirstClassValue();
+				String second_class_value = train_parser.GetSecondClassValue();
 				
-				if(examples.GetFirstClassCount() == examples.GetExamplesCount())
+				if(train_examples.GetFirstClassCount() == train_examples.GetExamplesCount())
 				{
 					TreeNode root = new TreeNode(0);
 					root.type = TreeNode.Type.CLASS_VALUE;
-					root.SetFirstClassValue(examples.GetFirstClassCount());
-					root.SetSecondClassValue(examples.GetSecondClassCount());
+					root.SetFirstClassValue(train_examples.GetFirstClassCount());
+					root.SetSecondClassValue(train_examples.GetSecondClassCount());
 					root.SetClassValue(first_class_value);
 				}
-				else if(examples.GetSecondClassCount() == examples.GetExamplesCount())
+				else if(train_examples.GetSecondClassCount() == train_examples.GetExamplesCount())
 				{
 					TreeNode root = new TreeNode(0);
 					root.type = TreeNode.Type.CLASS_VALUE;
-					root.SetSecondClassValue(examples.GetSecondClassCount());
-					root.SetFirstClassValue(examples.GetFirstClassCount());
+					root.SetSecondClassValue(train_examples.GetSecondClassCount());
+					root.SetFirstClassValue(train_examples.GetFirstClassCount());
 					root.SetClassValue(second_class_value);
 				}
-				else if(attributes.GetAttributesCount() == 0)
+				else if(train_attributes.GetAttributesCount() == 0)
 				{
 					TreeNode root = new TreeNode(0);
 					
-					if(examples.GetFirstClassCount() >= examples.GetSecondClassCount())
+					if(train_examples.GetFirstClassCount() >= train_examples.GetSecondClassCount())
 					{
 						root.type = TreeNode.Type.CLASS_VALUE;
-						root.SetFirstClassValue(examples.GetFirstClassCount());
-						root.SetSecondClassValue(examples.GetSecondClassCount());
+						root.SetFirstClassValue(train_examples.GetFirstClassCount());
+						root.SetSecondClassValue(train_examples.GetSecondClassCount());
 						root.SetClassValue(first_class_value);
 					}
 					else
 					{
 						root.type = TreeNode.Type.CLASS_VALUE;
-						root.SetSecondClassValue(examples.GetSecondClassCount());
-						root.SetFirstClassValue(examples.GetFirstClassCount());
+						root.SetSecondClassValue(train_examples.GetSecondClassCount());
+						root.SetFirstClassValue(train_examples.GetFirstClassCount());
 						root.SetClassValue(second_class_value);
 					}
 				}
 				else
 				{
 					TreeNode root = null;
-					root = BuildTree(attributes, examples, first_class_value, second_class_value, m);
+					root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, 4);
 					PrintTree(root, 0);
+					Evaluate(root, test_examples);
 				}
-			}
-			catch(NumberFormatException nfe)
-			{
-				System.out.println("Input number for m");
-			}
+//			}
+//			catch(NumberFormatException nfe)
+//			{
+//				System.out.println("Input number for m");
+//			}
 		}
 		else
 		{
@@ -520,6 +525,66 @@ public class DecisionTree
 		{
 			System.out.println(": " + root.GetClassValue());
 		}
+	}
+	
+	public static void Evaluate(TreeNode root, Examples examples)
+	{
+		int correct = 0;
+		Example example_walker = examples.GetExamplesHead();
+		while(example_walker != null)
+		{		
+			String class_value = GetClassValue(root, example_walker);
+			if(class_value.equals(example_walker.GetClassValue()))
+				correct++;
+			System.out.println(class_value + " " + example_walker.GetClassValue());
+			example_walker = example_walker.GetNext();
+		}
+		System.out.println(correct + " " + examples.GetExamplesCount());
+	}
+	
+	public static String GetClassValue(TreeNode root, Example example)
+	{
+		String class_value = null;
+		
+		if(root.type == TreeNode.Type.ATTRIBUTE)
+		{
+			Value value_walker = example.GetValuesHead();
+			
+			while(!value_walker.GetAttribute().equals(root.GetAttribute().AttributeName()))
+			{
+				value_walker = value_walker.GetNext();
+			}
+			
+			for(int i = 0; i < root.GetSuccessors().length && class_value == null; i++)
+			{
+				if(root.GetAttribute().GetFeaturesHead().GetFeature().equals("real"))
+				{
+					if(i == 0)
+					{
+						if(Double.parseDouble(value_walker.GetValue()) <= root.GetSuccessor(i).GetMidpoint())
+							class_value = GetClassValue(root.GetSuccessor(i).GetSuccessor(0), example);
+					}
+					else if(i == 1)
+					{
+						if(Double.parseDouble(value_walker.GetValue()) > root.GetSuccessor(i).GetMidpoint())
+							class_value = GetClassValue(root.GetSuccessor(i).GetSuccessor(0), example);
+					}
+				}
+				else
+				{
+					if(value_walker.GetValue().equals(root.GetSuccessor(i).GetFeature().GetFeature()))
+					{
+						class_value = GetClassValue(root.GetSuccessor(i).GetSuccessor(0), example);
+					}
+				}
+			}
+		}
+		else if(root.type == TreeNode.Type.CLASS_VALUE)
+		{
+			return root.GetClassValue();
+		}
+		
+		return class_value;
 	}
 
 }
