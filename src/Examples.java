@@ -10,12 +10,14 @@ public class Examples
 	private int second_value_count = 0;
 	private int examples_count = 0;
 	
+	//constructor initializes first and second class value
 	public Examples(String first_value, String second_value)
 	{
 		this.first_value = first_value;
 		this.second_value = second_value;
 	}
 	
+	//add example
 	public void AddExample(Example example)
 	{
 		if(examples_head == null)
@@ -38,25 +40,31 @@ public class Examples
 		examples_count++;
 	}
 	
+	//get examples count
 	public int GetExamplesCount()
 	{
 		return examples_count;
 	}
 	
+	//get first example
 	public Example GetExamplesHead()
 	{
 		return examples_head;
 	}
 	
+	//get last example
 	public Example GetExamplesTail()
 	{
 		return examples_tail;
 	}
 	
+	//get first class value count
 	public int GetFirstClassCount()
 	{
 		return first_value_count;
 	}
+	
+	//get second class value count
 	public int GetSecondClassCount()
 	{
 		return second_value_count;

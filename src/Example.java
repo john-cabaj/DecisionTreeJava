@@ -10,6 +10,7 @@ public class Example
 	private int values_count = 0;
 	private Value held_value;
 	
+	//add a value
 	public void AddValues(String value, String attribute)
 	{
 		Value temp = new Value(value, attribute);
@@ -28,61 +29,60 @@ public class Example
 		values_count++;
 	}
 	
+	//get count of values
 	public int GetValuesCount()
 	{
 		return values_count;
 	}
 	
+	//get first value
 	public Value GetValuesHead()
 	{
 		return values_head;
 	}
 	
+	//get last value
 	public Value GetValuesTail()
 	{
 		return values_tail;
 	}
 	
+	//get next
 	public Example GetNext()
 	{
 		return next;
 	}
-	
+	 //set next
 	public void SetNext(Example example)
 	{
 		next = example;
 	}
 	
+	//get previous
 	public Example GetPrev()
 	{
 		return prev;
 	}
 	
+	//set previous
 	public void SetPrev(Example example)
 	{
 		prev = example;
 	}
 	
+	//get class value
 	public String GetClassValue()
 	{
 		return class_value;
 	}
-	
+
+	//set class value
 	public void SetClassValue(String class_value)
 	{
 		this.class_value = class_value;
 	}
 	
-	public Value GetHeldValue()
-	{
-		return held_value;
-	}
-	
-	public void SetHeldValue(Value held_value)
-	{
-		this.held_value = held_value;
-	}
-	
+	//copy example
 	public void CopyExample(Example example)
 	{
 		values_head = example.values_head;

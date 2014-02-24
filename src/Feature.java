@@ -16,63 +16,75 @@ public class Feature
 	private UniqueReal unique_reals_tail = null;
 	private int unique_reals_count = 0;
 	
+	//constructor sets feature name and attribute
 	public Feature(String feature, Attribute attribute)
 	{
 		this.feature = feature;
 		this.attribute = attribute;
 	}
 	
+	//get feature
 	public String GetFeature()
 	{
 		return feature;
 	}
 	
+	//get next
 	public Feature GetNext()
 	{
 		return next;
 	}
-	
+	 
+	//set next
 	public void SetNext(Feature feature)
 	{
 		next = feature;
 	}
 	
+	//get previous
 	public Feature GetPrev()
 	{
 		return prev;
 	}
 	
+	//set previous
 	public void SetPrev(Feature feature)
 	{
 		prev = feature;
 	}
 	
+	//get attribute
 	public Attribute GetAttribute()
 	{
 		return attribute;
 	}
 	
+	//set attribute
 	public void SetAttribute(Attribute attribute)
 	{
 		this.attribute = attribute;
 	}
 	
+	//initialize real features list
 	public void InitializeRealFeatures(int count)
 	{
 		real_features = new RealFeature[count];
 	}
 	
+	//add a real feature
 	public void AddRealFeature(RealFeature real_feature, int index)
 	{
 		real_features[index] = real_feature;
 		real_features_count++;
 	}
 	
+	//get number of midpoints
 	public int GetMidpointsCount()
 	{
 		return midpoints_count;
 	}
 	
+	//get midpoint
 	public Midpoint GetMidpoint()
 	{
 		return midpoint;
@@ -83,6 +95,7 @@ public class Feature
 		this.midpoint = midpoint;
 	}
 	
+	//add midpoint
 	public void AddMidpoint(Midpoint midpoint)
 	{
 		if(midpoints_head == null)
@@ -100,6 +113,7 @@ public class Feature
 		midpoints_count++;
 	}
 	
+	//add unique real
 	public void AddUniqueReal(UniqueReal unique_real)
 	{
 		if(unique_reals_head == null)
@@ -117,6 +131,7 @@ public class Feature
 		unique_reals_count++;
 	}
 	
+	//get the midpoints
 	public Midpoint GetMidpoints(String first_class_value, String second_class_value)
 	{
 		boolean swap = false;
@@ -127,6 +142,7 @@ public class Feature
 		unique_reals_tail = null;
 		unique_reals_count = 0;
 		
+		//sort midpoints
 		do
 		{
 			swap = false;
@@ -143,6 +159,7 @@ public class Feature
 			
 		}while(swap);
 				
+		//get unique sorted values
 		for(RealFeature rf : real_features)
 		{
 			if(unique_reals_tail != null)
@@ -160,6 +177,7 @@ public class Feature
 			}
 		}
 		
+		//iterate over range to find value changes
 		UniqueReal unique_reals_walker = unique_reals_head;
 		boolean found = false;
 		int[] lower_bound_count = new int[2];
@@ -212,6 +230,7 @@ public class Feature
 			unique_reals_walker = unique_reals_walker.GetNext();
 		}
 		
+		//return midpoints
 		return midpoints_head;
 	}
 }

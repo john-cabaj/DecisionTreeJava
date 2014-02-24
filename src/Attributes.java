@@ -6,6 +6,7 @@ public class Attributes
 	private Attribute attributes_tail = null;
 	private int attributes_count = 0;
 	
+	//add an attribute
 	public void AddAttribute(Attribute attribute)
 	{
 		if(attributes_head == null)
@@ -23,21 +24,25 @@ public class Attributes
 		attributes_count++;
 	}
 	
+	//get count of attributes
 	public int GetAttributesCount()
 	{
 		return attributes_count;
 	}
 	
+	//get first attribute
 	public Attribute GetAttributesHead()
 	{
 		return attributes_head;
 	}
-	
+
+	//get last attribute
 	public Attribute GetAttributesTail()
 	{
 		return attributes_tail;
 	}
 	
+	//remove the last attribute for class values
 	public void RemoveTail()
 	{
 		attributes_tail.GetPrev().SetNext(null);

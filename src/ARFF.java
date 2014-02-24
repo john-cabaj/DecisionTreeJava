@@ -14,27 +14,32 @@ public class ARFF
 	private String second_class_value = null;
 	public Type type;
 	
+	//type enumeration
 	public enum Type
 	{
 		TRAINING, TESTING
 	}
 	
+	//constructor sets filename and type
 	public ARFF(String filename, Type type)
 	{
 		this.filename = filename;
 		this.type = type;
 	}
 	
+	//get filename
 	public String GetFilename()
 	{
 		return filename;
 	}
 	
+	//set filename
 	public void SetFilename(String filename)
 	{
 		this.filename = filename;
 	}
 	
+	//parse the file into attributes, features, and examples
 	public void ParseFile()
 	{
 		try
@@ -100,26 +105,31 @@ public class ARFF
 		}
 	}
 	
+	//get examples
 	public Examples GetExamples()
 	{
 		return examples;
 	}
 	
+	//get attributes
 	public Attributes GetAttributes()
 	{
 		return attributes;
 	}
 	
+	//get relation
 	public Relation GetRelation()
 	{
 		return relation;
 	}
 	
+	//get first class value
 	public String GetFirstClassValue()
 	{
 		return first_class_value;
 	}
-	
+
+	//get second class value
 	public String GetSecondClassValue()
 	{
 		return second_class_value;
