@@ -9,43 +9,57 @@ public class DecisionTree
 	//main method
 	public static void main(String[] args) 
 	{
-		File one = new File(args[0]);
-		File two = new File(args[1]);
-		if(one.exists() && !one.isDirectory() && two.exists() && !two.isDirectory())
+		try
 		{
-			try
+			File one = new File(args[0]);
+			File two = new File(args[1]);
+			if(one.exists() && !one.isDirectory() && two.exists() && !two.isDirectory())
 			{
-				int m = Integer.parseInt(args[2]);
-				ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
-				ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
-				train_parser.ParseFile();
-				test_parser.ParseFile();
-				
-				Examples train_examples = train_parser.GetExamples();
-				Attributes train_attributes = train_parser.GetAttributes();
-				Examples test_examples = test_parser.GetExamples();
-				String first_class_value = train_parser.GetFirstClassValue();
-				String second_class_value = train_parser.GetSecondClassValue();
-				
-				if(args.length == 4)
+				if(two.exists() && !two.isDirectory())
 				{
-					if(args[3].toLowerCase().equals("learning_curve"))
-						LearningCurve(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
+					try
+					{
+						int m = Integer.parseInt(args[2]);
+						ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
+						ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
+						train_parser.ParseFile();
+						test_parser.ParseFile();
+						
+						Examples train_examples = train_parser.GetExamples();
+						Attributes train_attributes = train_parser.GetAttributes();
+						Examples test_examples = test_parser.GetExamples();
+						String first_class_value = train_parser.GetFirstClassValue();
+						String second_class_value = train_parser.GetSecondClassValue();
+						
+						if(args.length == 4)
+						{
+							if(args[3].toLowerCase().equals("learning_curve"))
+								LearningCurve(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
+						}
+						else
+						{
+							BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
+						}
+						
+					}
+					catch(NumberFormatException nfe)
+					{
+						System.out.println("Input number for m");
+					}
 				}
 				else
 				{
-					BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
+					System.out.println("Testing set file doesn't exist");
 				}
-				
 			}
-			catch(NumberFormatException nfe)
+			else
 			{
-				System.out.println("Input number for m");
+				System.out.println("Training set file doesn't exist");
 			}
 		}
-		else
+		catch(ArrayIndexOutOfBoundsException oob)
 		{
-			System.out.println("Input proper file location");
+			System.out.println("Usage: dt-learn <train-set-file> <test-set-file> m");
 		}
 	}
 	
