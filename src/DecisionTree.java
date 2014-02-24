@@ -1,4 +1,8 @@
 import java.io.*;
+import java.math.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
 //decision tree class
 public class DecisionTree 
@@ -7,71 +11,28 @@ public class DecisionTree
 	//main method
 	public static void main(String[] args) 
 	{
-		File one = new File("heart_train.arff");
-		File two = new File("heart_test.arff");
+		File one = new File(args[0]);
+		File two = new File(args[1]);
 		if(one.exists() && !one.isDirectory() && two.exists() && !two.isDirectory())
 		{
-//			try
-//			{
-				//int m = Integer.parseInt(args[2]);
-				ARFF train_parser = new ARFF("heart_train.arff", ARFF.Type.TRAINING);
-				ARFF test_parser = new ARFF("heart_test.arff", ARFF.Type.TESTING);
-				train_parser.ParseFile();
-				test_parser.ParseFile();
-				
-				Examples train_examples = train_parser.GetExamples();
-				Attributes train_attributes = train_parser.GetAttributes();
-				Examples test_examples = test_parser.GetExamples();
-				String first_class_value = train_parser.GetFirstClassValue();
-				String second_class_value = train_parser.GetSecondClassValue();
-				
-				if(train_examples.GetFirstClassCount() == train_examples.GetExamplesCount())
+			try
+			{
+				int m = Integer.parseInt(args[2]);
+				if(args.length == 4)
 				{
-					TreeNode root = new TreeNode(0);
-					root.type = TreeNode.Type.CLASS_VALUE;
-					root.SetFirstClassValue(train_examples.GetFirstClassCount());
-					root.SetSecondClassValue(train_examples.GetSecondClassCount());
-					root.SetClassValue(first_class_value);
-				}
-				else if(train_examples.GetSecondClassCount() == train_examples.GetExamplesCount())
-				{
-					TreeNode root = new TreeNode(0);
-					root.type = TreeNode.Type.CLASS_VALUE;
-					root.SetSecondClassValue(train_examples.GetSecondClassCount());
-					root.SetFirstClassValue(train_examples.GetFirstClassCount());
-					root.SetClassValue(second_class_value);
-				}
-				else if(train_attributes.GetAttributesCount() == 0)
-				{
-					TreeNode root = new TreeNode(0);
-					
-					if(train_examples.GetFirstClassCount() >= train_examples.GetSecondClassCount())
-					{
-						root.type = TreeNode.Type.CLASS_VALUE;
-						root.SetFirstClassValue(train_examples.GetFirstClassCount());
-						root.SetSecondClassValue(train_examples.GetSecondClassCount());
-						root.SetClassValue(first_class_value);
-					}
-					else
-					{
-						root.type = TreeNode.Type.CLASS_VALUE;
-						root.SetSecondClassValue(train_examples.GetSecondClassCount());
-						root.SetFirstClassValue(train_examples.GetFirstClassCount());
-						root.SetClassValue(second_class_value);
-					}
+					if(args[3].toLowerCase().equals("learning_curve"))
+						LearningCurve(args, m);
 				}
 				else
 				{
-					TreeNode root = null;
-					root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, 4);
-					PrintTree(root, 0);
-					Evaluate(root, test_examples);
+					BuildDecisionTree(args, m);
 				}
-//			}
-//			catch(NumberFormatException nfe)
-//			{
-//				System.out.println("Input number for m");
-//			}
+				
+			}
+			catch(NumberFormatException nfe)
+			{
+				System.out.println("Input number for m");
+			}
 		}
 		else
 		{
@@ -83,6 +44,17 @@ public class DecisionTree
 	{
 		Attribute temp = ChooseSplit(attributes, examples, first_class_value, second_class_value);
 		TreeNode root = null;
+		if(temp == null)
+		{
+			TreeNode leaf = new TreeNode(0);
+			leaf.type = TreeNode.Type.CLASS_VALUE;
+			
+			if(examples.GetFirstClassCount() >= examples.GetSecondClassCount())
+				leaf.SetClassValue(first_class_value);
+			else
+				leaf.SetClassValue(second_class_value);
+			return root;
+		}
 		if(temp.GetFeaturesHead().GetFeature().equals("real"))
 			root = new TreeNode(2);
 		else
@@ -308,8 +280,6 @@ public class DecisionTree
 			
 			if(feature_walker.GetFeature().equals("real"))
 			{
-//				if(attribute_walker.Attribute().equals("thalach"))
-//					System.out.println("HERE");
 				example_walker = examples.GetExamplesHead();
 				feature_walker.InitializeRealFeatures(examples.GetExamplesCount());
 				for(int i = 0; i < examples.GetExamplesCount(); i++)
@@ -586,5 +556,279 @@ public class DecisionTree
 		
 		return class_value;
 	}
+	
+	public static void BuildDecisionTree(String[] args, int m)
+	{
+		ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
+		ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
+		train_parser.ParseFile();
+		test_parser.ParseFile();
+		
+		Examples train_examples = train_parser.GetExamples();
+		Attributes train_attributes = train_parser.GetAttributes();
+		Examples test_examples = test_parser.GetExamples();
+		String first_class_value = train_parser.GetFirstClassValue();
+		String second_class_value = train_parser.GetSecondClassValue();
+		
+		if(train_examples.GetFirstClassCount() == train_examples.GetExamplesCount())
+		{
+			TreeNode root = new TreeNode(0);
+			root.type = TreeNode.Type.CLASS_VALUE;
+			root.SetFirstClassValue(train_examples.GetFirstClassCount());
+			root.SetSecondClassValue(train_examples.GetSecondClassCount());
+			root.SetClassValue(first_class_value);
+		}
+		else if(train_examples.GetSecondClassCount() == train_examples.GetExamplesCount())
+		{
+			TreeNode root = new TreeNode(0);
+			root.type = TreeNode.Type.CLASS_VALUE;
+			root.SetSecondClassValue(train_examples.GetSecondClassCount());
+			root.SetFirstClassValue(train_examples.GetFirstClassCount());
+			root.SetClassValue(second_class_value);
+		}
+		else if(train_attributes.GetAttributesCount() == 0)
+		{
+			TreeNode root = new TreeNode(0);
+			
+			if(train_examples.GetFirstClassCount() >= train_examples.GetSecondClassCount())
+			{
+				root.type = TreeNode.Type.CLASS_VALUE;
+				root.SetFirstClassValue(train_examples.GetFirstClassCount());
+				root.SetSecondClassValue(train_examples.GetSecondClassCount());
+				root.SetClassValue(first_class_value);
+			}
+			else
+			{
+				root.type = TreeNode.Type.CLASS_VALUE;
+				root.SetSecondClassValue(train_examples.GetSecondClassCount());
+				root.SetFirstClassValue(train_examples.GetFirstClassCount());
+				root.SetClassValue(second_class_value);
+			}
+		}
+		else
+		{
+			TreeNode root = null;
+			root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, m);
+			PrintTree(root, 0);
+			Evaluate(root, test_examples);
+		}
+	}
+	
+	public static void LearningCurve(String[] args, int m)
+	{
+		ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
+		ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
+		train_parser.ParseFile();
+		test_parser.ParseFile();
+		
+		Examples train_examples = train_parser.GetExamples();
+		Attributes train_attributes = train_parser.GetAttributes();
+		Examples test_examples = test_parser.GetExamples();
+		String first_class_value = train_parser.GetFirstClassValue();
+		String second_class_value = train_parser.GetSecondClassValue();
+		double average = 0, min = 1, max = 0;
+		double sum = 0, count = 0;
+		int eval_val = 0;
+		
+		for(int i = 0; i < 10; i++)
+		{
+			Examples temp = StratifiedSampling(train_examples, 25, first_class_value, second_class_value);
+			eval_val = RunEval(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
+			sum+=eval_val;
+			count++;
+			if(((double)eval_val/(double)test_examples.GetExamplesCount()) < min)
+				min = (double)eval_val/(double)test_examples.GetExamplesCount();
+			if(((double)eval_val/(double)test_examples.GetExamplesCount()) > max)
+				max = (double)eval_val/(double)test_examples.GetExamplesCount();
+		}
+		average = (double)sum/(double)count;
+		System.out.println("*************************TRAINING SIZE: 25*************************");
+		System.out.println("AVG: " + average);
+		System.out.println("MIN: " + min);
+		System.out.println("MAX: " + max);
+		average = 0;
+		min = 100;
+		max = 0;
+		sum = 0;
+		count = 0;
+		
+		for(int i = 0; i < 10; i++)
+		{
+			Examples temp = StratifiedSampling(train_examples, 50, first_class_value, second_class_value);
+			eval_val = RunEval(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
+			sum+=eval_val;
+			count++;
+			if(((double)eval_val/(double)test_examples.GetExamplesCount()) < min)
+				min = (double)eval_val/(double)test_examples.GetExamplesCount();
+			if(((double)eval_val/(double)test_examples.GetExamplesCount()) > max)
+				max = (double)eval_val/(double)test_examples.GetExamplesCount();
+		}
+		average = (double)sum/(double)count;
+		System.out.println("*************************TRAINING SIZE: 50*************************");
+		System.out.println("AVG: " + average);
+		System.out.println("MIN: " + min);
+		System.out.println("MAX: " + max);
+		average = 0;
+		min = 100;
+		max = 0;
+		sum = 0;
+		count = 0;
+		
+		for(int i = 0; i < 10; i++)
+		{
+			Examples temp = StratifiedSampling(train_examples, 100, first_class_value, second_class_value);
+			eval_val = RunEval(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
+			sum+=eval_val;
+			count++;
+			if(((double)eval_val/(double)test_examples.GetExamplesCount()) < min)
+				min = (double)eval_val/(double)test_examples.GetExamplesCount();
+			if(((double)eval_val/(double)test_examples.GetExamplesCount()) > max)
+				max = (double)eval_val/(double)test_examples.GetExamplesCount();
+		}
+		average = (double)sum/(double)count;
+		System.out.println("*************************TRAINING SIZE: 100*************************");
+		System.out.println("AVG: " + average);
+		System.out.println("MIN: " + min);
+		System.out.println("MAX: " + max);
+		average = 0;
+		min = 100;
+		max = 0;
+		sum = 0;
+		count = 0;
 
+		eval_val = RunEval(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
+		sum+=eval_val;
+		count++;
+		average = (double)sum/(double)count;
+		min = (double)eval_val/(double)test_examples.GetExamplesCount();
+		max = (double)eval_val/(double)test_examples.GetExamplesCount();
+		System.out.println("*************************TRAINING SIZE: 200*************************");
+		System.out.println("AVG: " + average);
+		System.out.println("MIN: " + min);
+		System.out.println("MAX: " + max);
+	}
+	
+	public static Examples StratifiedSampling(Examples examples, int number, String first_class_value, String second_class_value)
+	{
+		Examples examples_subset = new Examples(first_class_value, second_class_value);
+		Random rand = new Random();
+		
+		int extra = rand.nextInt(100);
+		double first_class_number = ((double)examples.GetFirstClassCount()/(double)examples.GetExamplesCount()) * (double)number;
+		double second_class_number = ((double)examples.GetSecondClassCount()/(double)examples.GetExamplesCount()) * (double)number;
+		int first_class_pick = 0;
+		int second_class_pick = 0;
+		
+		if(first_class_number % Math.floor(first_class_number) > second_class_number % Math.floor(second_class_number))
+		{
+			first_class_pick = (int)Math.ceil(first_class_number);
+			second_class_pick = (int)Math.floor(second_class_number);
+		}
+		else if(second_class_number % Math.floor(second_class_number) > first_class_number % Math.floor(first_class_number))
+		{
+			second_class_pick = (int)Math.ceil(second_class_number);
+			first_class_pick = (int)Math.floor(first_class_number);
+		}
+		else
+		{
+			if(extra < 50)
+			{
+				first_class_pick = (int)Math.ceil(first_class_number);
+				second_class_pick = (int)Math.floor(second_class_number);
+			}
+			else
+			{
+				second_class_pick = (int)Math.ceil(second_class_number);
+				first_class_pick = (int)Math.floor(first_class_number);
+			}
+		}
+		
+		ArrayList<Example> first_class_examples = new ArrayList<Example>();
+		ArrayList<Example> second_class_examples = new ArrayList<Example>();
+		Example example_walker = examples.GetExamplesHead();
+		while(example_walker != null)
+		{
+			if(example_walker.GetClassValue().equals(first_class_value))
+				first_class_examples.add(example_walker);
+			else if(example_walker.GetClassValue().equals(second_class_value))
+				second_class_examples.add(example_walker);
+			
+			example_walker = example_walker.GetNext();
+		}
+		
+		Collections.shuffle(first_class_examples);
+		Collections.shuffle(second_class_examples);
+		
+		for(int i = 0; i < first_class_pick; i++)
+		{
+			Example ex = new Example();
+			ex.CopyExample(first_class_examples.get(i));
+			examples_subset.AddExample(ex);
+		}
+		for(int j = 0; j < second_class_pick; j++)
+		{
+			Example ex = new Example();
+			ex.CopyExample(second_class_examples.get(j));
+			examples_subset.AddExample(ex);
+		}
+			
+		return examples_subset;
+	}
+	
+	public static int RunEval(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m)
+	{
+		int correct = 0;
+		
+		if(train_examples.GetFirstClassCount() == train_examples.GetExamplesCount())
+		{
+			TreeNode root = new TreeNode(0);
+			root.type = TreeNode.Type.CLASS_VALUE;
+			root.SetFirstClassValue(train_examples.GetFirstClassCount());
+			root.SetSecondClassValue(train_examples.GetSecondClassCount());
+			root.SetClassValue(first_class_value);
+		}
+		else if(train_examples.GetSecondClassCount() == train_examples.GetExamplesCount())
+		{
+			TreeNode root = new TreeNode(0);
+			root.type = TreeNode.Type.CLASS_VALUE;
+			root.SetSecondClassValue(train_examples.GetSecondClassCount());
+			root.SetFirstClassValue(train_examples.GetFirstClassCount());
+			root.SetClassValue(second_class_value);
+		}
+		else if(train_attributes.GetAttributesCount() == 0)
+		{
+			TreeNode root = new TreeNode(0);
+			
+			if(train_examples.GetFirstClassCount() >= train_examples.GetSecondClassCount())
+			{
+				root.type = TreeNode.Type.CLASS_VALUE;
+				root.SetFirstClassValue(train_examples.GetFirstClassCount());
+				root.SetSecondClassValue(train_examples.GetSecondClassCount());
+				root.SetClassValue(first_class_value);
+			}
+			else
+			{
+				root.type = TreeNode.Type.CLASS_VALUE;
+				root.SetSecondClassValue(train_examples.GetSecondClassCount());
+				root.SetFirstClassValue(train_examples.GetFirstClassCount());
+				root.SetClassValue(second_class_value);
+			}
+		}
+		else
+		{
+			TreeNode root = null;
+			root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, m);
+			
+			Example example_walker = test_examples.GetExamplesHead();
+			while(example_walker != null)
+			{		
+				String class_value = GetClassValue(root, example_walker);
+				if(class_value.equals(example_walker.GetClassValue()))
+					correct++;
+				example_walker = example_walker.GetNext();
+			}
+		}
+		
+		return correct;
+	}
 }
