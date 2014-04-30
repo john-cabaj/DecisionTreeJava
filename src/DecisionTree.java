@@ -25,28 +25,55 @@ public class DecisionTree
 		//try-catch for empty arguments
 		try
 		{
+			//loop through arguments
+			for(int i = 0; i < args.length; i++)
+			{
+				//if generating learning curves
+				if(args[i].toLowerCase().equals("learning_curve"))
+					learning_curve = true;
+				//if outputting to a file
+				else if(args[i].toLowerCase().equals("-o"))
+				{
+					if(i < args.length - 1)
+					{
+						to_file = true;
+						file_name = args[i+1];
+					}
+					else
+						System.out.println("Must include file name for output");
+				}
+			}
+
+			//if only printing the tree
+			if(args[1].toLowerCase().equals("tree"))
+				only_tree = true;
+			
 			//initialize two files to check that training and test set files valid
 			File one = new File(args[0]);
-			File two = new File(args[1]);
+			File two = null;
+			//if not only printing tree
+			if(!only_tree)
+				two = new File(args[1]);
 
 			//check that training set valid
-			if(one.exists() && !one.isDirectory() && two.exists() && !two.isDirectory())
+			if(one.exists() && !one.isDirectory())
 			{
 				//check that test set valid
-				if(two.exists() && !two.isDirectory())
+				if(only_tree || two.exists() && !two.isDirectory())
 				{
 					//try-catch for incorrect m input
 					try
 					{
-						//get m value
+						//save stopping criteria m
 						int m = Integer.parseInt(args[2]);
 
 						//initialize two ARFF parsers and parse training and test sets
 						ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
 						ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
 						train_parser.ParseFile();
-						test_parser.ParseFile();
-
+						//if not only printing tree
+						if(!only_tree)
+							test_parser.ParseFile();
 						//get list of attributes
 						Attributes train_attributes = train_parser.GetAttributes();
 
@@ -57,28 +84,6 @@ public class DecisionTree
 						//get class values
 						String first_class_value = train_parser.GetFirstClassValue();
 						String second_class_value = train_parser.GetSecondClassValue();
-
-						//loop through arguments
-						for(int i = 0; i < args.length; i++)
-						{
-							//if generating learning curves
-							if(args[i].toLowerCase().equals("learning_curve"))
-								learning_curve = true;
-							//if outputting to a file
-							else if(args[i].toLowerCase().equals("-o"))
-							{
-								if(i < args.length - 1)
-								{
-									to_file = true;
-									file_name = args[i+1];
-								}
-								else
-									System.out.println("Must include file name for output");
-							}
-							//if only printing the tree
-							else if(args[i].toLowerCase().equals("tree"))
-								only_tree = true;
-						}
 
 						//if the output to file option, output file name, and learning curves statified sampling arguments are given
 						if(learning_curve && to_file)
@@ -140,13 +145,18 @@ public class DecisionTree
 					//catch incorrect m value
 					catch(NumberFormatException nfe)
 					{
-						System.out.println("Input number for m");
+						System.out.println("Usage: dt-learn train-set-file {test-set-file|tree} m [-o] [output file] [learning_curve]");
 					}
 				}
-				//test set doesn't exist
+				//testing file or print tree argument incorrect
 				else
 				{
-					System.out.println("Testing set file doesn't exist");
+					//incorrect input
+					if(!two.exists()  && ! two.isDirectory() && !only_tree)
+						System.out.println("Usage: dt-learn train-set-file {test-set-file|tree} m [-o] [output file] [learning_curve]");
+					//testing set file must not exist
+					else
+						System.out.println("Testing set file doesn't exist");
 				}
 			}
 			//training set doesn't exist
@@ -158,7 +168,7 @@ public class DecisionTree
 		//input missing
 		catch(ArrayIndexOutOfBoundsException oob)
 		{
-			System.out.println("Usage: dt-learn <train-set-file> <test-set-file> m [-o] [output file] [learning_curve] [tree]");
+			System.out.println("Usage: dt-learn train-set-file {test-set-file|tree} m [-o] [output file] [learning_curve]");
 		}
 	}
 
