@@ -53,6 +53,7 @@ public class ARFF
 			while(scan.hasNextLine())
 			{
 				line = scan.nextLine();
+				line = line.toLowerCase();
 				
 				if(data)
 				{
