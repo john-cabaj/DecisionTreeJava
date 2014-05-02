@@ -169,7 +169,7 @@ public class DecisionTree
 							writer = new BufferedWriter(fw);
 
 							//build the tree as normal
-							BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
+							BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 							writer.close();
 						}
 						//catch IOException
@@ -183,7 +183,7 @@ public class DecisionTree
 					else
 					{
 						//build the true as normal
-						BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
+						BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 					}
 				}
 				//testing file or print tree argument incorrect
@@ -925,7 +925,7 @@ public class DecisionTree
 	}
 
 	//builds a decision tree
-	public static int BuildDecisionTree(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m, boolean learning_curve)
+	public static int BuildDecisionTree(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m)
 	{		
 		int correct = 0;
 
@@ -974,7 +974,7 @@ public class DecisionTree
 			root = BuildTree(train_attributes, train_examples, first_class_value, second_class_value, m);
 
 			//we aren't generating learning curve
-			if(!learning_curve)
+			if(!learning_curve && !cross_validation)
 			{
 				//if we're not outputting to file
 				if(!to_file)
@@ -991,9 +991,21 @@ public class DecisionTree
 						PrintAllEvaluateFile(root, test_examples);
 				}
 			}
-			//generating accuracy measurement
-			else
+			//generating learning curve correctly classified
+			else if(learning_curve)
 			{
+				correct = Evaluate(root, test_examples);
+			}
+			//generating cross-validation correctly classified
+			else if(cross_validation)
+			{
+				//if we're not outputting to file
+				if(!to_file)
+					PrintTree(root, 0);
+				//outputting to file
+				else
+					PrintTreeFile(root, 0);
+
 				correct = Evaluate(root, test_examples);
 			}
 		}
@@ -1020,7 +1032,7 @@ public class DecisionTree
 			Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 			//get an evaluation of the tree
-			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
+			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
 
 			//get accuracy and min/max of tree evaluation
 			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1054,7 +1066,7 @@ public class DecisionTree
 			Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 			//get an evaluation of the tree
-			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
+			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
 
 			//get accuracy and min/max of tree evaluation
 			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1088,7 +1100,7 @@ public class DecisionTree
 			Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 			//get an evaluation of the tree
-			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
+			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
 
 			//get accuracy and min/max of tree evaluation
 			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1115,7 +1127,7 @@ public class DecisionTree
 
 		//training size tree of full training set
 		//get an evaluation of the tree
-		eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
+		eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 
 		//get accuracy and min/max of tree evaluation
 		accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1148,7 +1160,7 @@ public class DecisionTree
 				Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 				//get an evaluation of the tree
-				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
+				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
 
 				//get accuracy and min/max of tree evaluation
 				accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1186,7 +1198,7 @@ public class DecisionTree
 				Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 				//get an evaluation of the tree
-				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
+				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
 
 				//get accuracy and min/max of tree evaluation
 				accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1224,7 +1236,7 @@ public class DecisionTree
 				Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 				//get an evaluation of the tree
-				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
+				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m);
 
 				//get accuracy and min/max of tree evaluation
 				accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1255,7 +1267,7 @@ public class DecisionTree
 
 			//training size tree of full training set
 			//get an evaluation of the tree
-			eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
+			eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 
 			//get accuracy and min/max of tree evaluation
 			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
@@ -1428,7 +1440,7 @@ public class DecisionTree
 			}
 
 			//get an evaluation of the tree
-			eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
+			eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
 			total_accuracy += accuracy;
 			System.out.println("Fold: " + (i+1) + " Accuracy: " + formatter.format(accuracy));
@@ -1490,7 +1502,7 @@ public class DecisionTree
 				}
 
 				//get an evaluation of the tree
-				eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
+				eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 				accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
 				total_accuracy += accuracy;
 				writer.write("Fold: " + (i+1) + " Accuracy: " + formatter.format(accuracy));
