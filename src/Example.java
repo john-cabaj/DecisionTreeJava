@@ -90,4 +90,12 @@ public class Example
 		class_value = example.class_value;
 		values_count = example.values_count;
 	}
+	
+	//clear fields
+	public void ClearFields()
+	{
+		next = null;
+		prev = null;
+		held_value = null;
+	}
 }

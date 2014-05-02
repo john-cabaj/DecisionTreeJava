@@ -40,6 +40,77 @@ public class Examples
 		examples_count++;
 	}
 	
+	//remove example
+	public Example RemoveExample(int index)
+	{
+		boolean found = false;
+		//store halfway point of examples
+		int middle  = (int)Math.floor((examples_count-1)/2);
+		Example remove = null;
+		
+		if(index == 0)
+		{
+			remove = examples_head;
+			
+			if(examples_count != 1)
+			{
+				examples_head = examples_head.GetNext();
+				examples_head.GetPrev().SetNext(null);
+				examples_head.SetPrev(null);
+			}
+		}
+		else if(index == examples_count-1)
+		{
+			remove = examples_tail;
+			examples_tail = examples_tail.GetPrev();
+			examples_tail.GetNext().SetPrev(null);
+			examples_tail.SetNext(null);
+		}
+		else
+		{
+			//pursue from head
+			if(index <= middle)
+			{
+				Example example_walker = examples_head;
+				
+				for(int i = 0; i <= middle && !found; i++)
+				{
+					if(i != index)
+						example_walker = example_walker.GetNext();
+					else
+					{
+						found = true;
+						remove = example_walker;
+					}
+				}
+			}
+			//pursue from tail
+			else
+			{
+				Example example_walker = examples_tail;
+				
+				for(int j = examples_count-1; j > middle && !found; j--)
+				{
+					if(j != index)
+						example_walker = example_walker.GetPrev();
+					else
+					{
+						found = true;
+						remove = example_walker;
+					}
+				}
+			}
+			
+			remove.GetPrev().SetNext(remove.GetNext());
+			remove.GetNext().SetPrev(remove.GetPrev());
+			remove.SetNext(null);
+			remove.SetPrev(null);
+		}
+
+		examples_count--;
+		return remove;
+	}
+	
 	//get examples count
 	public int GetExamplesCount()
 	{

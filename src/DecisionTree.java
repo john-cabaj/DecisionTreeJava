@@ -18,6 +18,10 @@ public class DecisionTree
 	private static BufferedWriter writer = null;
 	//only print tree
 	private static boolean only_tree = false;
+	//performing cross-validation
+	private static boolean cross_validation = false;
+	//number of cross-validation folds
+	private static int folds = 0;
 
 	//main method
 	public static void main(String[] args) 
@@ -25,14 +29,33 @@ public class DecisionTree
 		//try-catch for empty arguments
 		try
 		{
+			//stopping criteria argument
+			int m = 0;
+
+			//if only printing tree
+			if(args[1].toLowerCase().equals("tree"))
+			{
+				only_tree = true;
+				m = Integer.parseInt(args[2]);
+			}
+			//if generating learning curves
+			else if(args[2].toLowerCase().equals("lc"))
+			{
+				learning_curve = true;
+				m = Integer.parseInt(args[3]);
+			}
+			//if performing cross-validation
+			else if(args[1].toLowerCase().equals("cv"))
+			{
+				cross_validation = true;
+				folds = Integer.parseInt(args[2]);
+				m = Integer.parseInt(args[3]);
+			}
+
 			//loop through arguments
 			for(int i = 0; i < args.length; i++)
 			{
-				//if generating learning curves
-				if(args[i].toLowerCase().equals("learning_curve"))
-					learning_curve = true;
-				//if outputting to a file
-				else if(args[i].toLowerCase().equals("-o"))
+				if(args[i].toLowerCase().equals("-o"))
 				{
 					if(i < args.length - 1)
 					{
@@ -44,49 +67,42 @@ public class DecisionTree
 				}
 			}
 
-			//if only printing the tree
-			if(args[1].toLowerCase().equals("tree"))
-				only_tree = true;
-			
 			//initialize two files to check that training and test set files valid
 			File one = new File(args[0]);
 			File two = null;
-			//if not only printing tree
-			if(!only_tree)
+			//if using testing set
+			if(!only_tree && !cross_validation)
 				two = new File(args[1]);
 
 			//check that training set valid
 			if(one.exists() && !one.isDirectory())
 			{
 				//check that test set valid
-				if(only_tree || two.exists() && !two.isDirectory())
+				if(only_tree || cross_validation || two.exists() && !two.isDirectory())
 				{
-					//try-catch for incorrect m input
-					try
+					//initialize two ARFF parsers and parse training and test sets
+					ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
+					ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
+					train_parser.ParseFile();
+					//if not only printing tree
+					if(!only_tree && !cross_validation)
+						test_parser.ParseFile();
+					//get list of attributes
+					Attributes train_attributes = train_parser.GetAttributes();
+
+					//get training and test examples
+					Examples train_examples = train_parser.GetExamples();
+					Examples test_examples = test_parser.GetExamples();
+
+					//get class values
+					String first_class_value = train_parser.GetFirstClassValue();
+					String second_class_value = train_parser.GetSecondClassValue();
+
+					//if the learning curves statified sampling argument is given, perform the learning curve
+					if(learning_curve)
 					{
-						//save stopping criteria m
-						int m = Integer.parseInt(args[2]);
-
-						//initialize two ARFF parsers and parse training and test sets
-						ARFF train_parser = new ARFF(args[0], ARFF.Type.TRAINING);
-						ARFF test_parser = new ARFF(args[1], ARFF.Type.TESTING);
-						train_parser.ParseFile();
-						//if not only printing tree
-						if(!only_tree)
-							test_parser.ParseFile();
-						//get list of attributes
-						Attributes train_attributes = train_parser.GetAttributes();
-
-						//get training and test examples
-						Examples train_examples = train_parser.GetExamples();
-						Examples test_examples = test_parser.GetExamples();
-
-						//get class values
-						String first_class_value = train_parser.GetFirstClassValue();
-						String second_class_value = train_parser.GetSecondClassValue();
-
-						//if the output to file option, output file name, and learning curves statified sampling arguments are given
-						if(learning_curve && to_file)
+						//output to file
+						if(to_file)
 						{
 							//try-catch for IOExceptions
 							try
@@ -97,7 +113,7 @@ public class DecisionTree
 								FileWriter fw = new FileWriter(file.getAbsoluteFile());
 								writer = new BufferedWriter(fw);
 
-								//perform the learning curve value generation and print to file
+								//perform the learning curve and print to file
 								LearningCurveFile(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
 								writer.close();
 							}
@@ -107,13 +123,15 @@ public class DecisionTree
 								System.out.println("IO excpetion");
 							}
 						}
-						//if the learning curves statified sampling argument is given, perform the learning curve value generation
-						else if(learning_curve)
-						{
+						//output to console
+						else
 							LearningCurve(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m);
-						}
-						//if the output to file option and output file name arguments are given
-						else if(to_file)
+					}
+					//if the cross_validation argument is given, perform cross-validation
+					else if(cross_validation)
+					{
+						//output to file
+						if(to_file)
 						{
 							//try-catch for IOExceptions
 							try
@@ -123,37 +141,57 @@ public class DecisionTree
 									file.createNewFile();
 								FileWriter fw = new FileWriter(file.getAbsoluteFile());
 								writer = new BufferedWriter(fw);
-								
-								//build the tree as normal
-								BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
+
+								//perform the cross-validation and print to file
+								CrossValidationFile(train_attributes, train_examples, first_class_value, second_class_value, m, folds);	
 								writer.close();
 							}
 							//catch IOException
 							catch(IOException ioe)
 							{
-								System.out.println("IO exception");
+								System.out.println("IO excpetion");
 							}
-
 						}
-						//no special arguments
+						//output to console
 						else
-						{
-							//build the true as normal
-							BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
-						}
+							CrossValidation(train_attributes, train_examples, first_class_value, second_class_value, m, folds);	
 					}
-					//catch incorrect m value
-					catch(NumberFormatException nfe)
+					//if the output to file option and output file name arguments are given
+					else if(to_file)
 					{
-						System.out.println("Usage: dt-learn train-set-file {test-set-file|tree} m [-o] [output file] [learning_curve]");
+						//try-catch for IOExceptions
+						try
+						{
+							File file = new File(file_name);
+							if(!file.exists())
+								file.createNewFile();
+							FileWriter fw = new FileWriter(file.getAbsoluteFile());
+							writer = new BufferedWriter(fw);
+
+							//build the tree as normal
+							BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
+							writer.close();
+						}
+						//catch IOException
+						catch(IOException ioe)
+						{
+							System.out.println("IO exception");
+						}
+
+					}
+					//no special arguments
+					else
+					{
+						//build the true as normal
+						BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, false);
 					}
 				}
 				//testing file or print tree argument incorrect
 				else
 				{
 					//incorrect input
-					if(!two.exists()  && ! two.isDirectory() && !only_tree)
-						System.out.println("Usage: dt-learn train-set-file {test-set-file|tree} m [-o] [output file] [learning_curve]");
+					if(!two.exists()  && ! two.isDirectory() && !only_tree && !cross_validation)
+						System.out.println("Usage: dt-learn train-set-file {test-set-file [lc]|tree|cv #folds} m [-o] [output file]");
 					//testing set file must not exist
 					else
 						System.out.println("Testing set file doesn't exist");
@@ -168,7 +206,12 @@ public class DecisionTree
 		//input missing
 		catch(ArrayIndexOutOfBoundsException oob)
 		{
-			System.out.println("Usage: dt-learn train-set-file {test-set-file|tree} m [-o] [output file] [learning_curve]");
+			System.out.println("Usage: dt-learn train-set-file {test-set-file [lc]|tree|cv #folds} m [-o] [output file]");
+		}
+		//catch incorrect numerical value
+		catch(NumberFormatException nfe)
+		{
+			System.out.println("Usage: dt-learn train-set-file {test-set-file [lc]|tree|cv #folds} m [-o] [output file]");
 		}
 	}
 
@@ -720,7 +763,7 @@ public class DecisionTree
 		System.out.println(correct + " " + examples.GetExamplesCount());
 	}
 
-	//prints the tree given a root and level for formatting
+	//prints the tree given a root and level for formatting to file
 	private static void PrintTreeFile(TreeNode root, int level)
 	{
 		try
@@ -782,7 +825,7 @@ public class DecisionTree
 		}
 	}
 
-	//print all evaluations of test set
+	//print all evaluations of test set to file
 	public static void PrintAllEvaluateFile(TreeNode root, Examples examples)
 	{
 		try
@@ -948,7 +991,7 @@ public class DecisionTree
 						PrintAllEvaluateFile(root, test_examples);
 				}
 			}
-			//generating learning curves
+			//generating accuracy measurement
 			else
 			{
 				correct = Evaluate(root, test_examples);
@@ -965,12 +1008,16 @@ public class DecisionTree
 		double sum = 0, count = 0;
 		int eval_val = 0;
 		DecimalFormat formatter = new DecimalFormat("0.000000");
+		int size = 0;
 
-		//training size trees of 25
+		//initialize training sizes to 1/8 of the training data
+		size = (int)Math.floor(train_examples.GetExamplesCount() * .125);
+
+		//training size trees of 1/8 the training data
 		for(int i = 0; i < 10; i++)
 		{
 			//sample the training set
-			Examples temp = StratifiedSampling(train_examples, 25, first_class_value, second_class_value);
+			Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 			//get an evaluation of the tree
 			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
@@ -986,7 +1033,7 @@ public class DecisionTree
 		average = (double)sum/(double)count;
 
 		//print information
-		System.out.println("*************************TRAINING SIZE: 25*************************");
+		System.out.println("*************************TRAINING SIZE: " + size + "*************************");
 		System.out.println("AVG: " + formatter.format(average));
 		System.out.println("MIN: " + formatter.format(min));
 		System.out.println("MAX: " + formatter.format(max));
@@ -997,11 +1044,14 @@ public class DecisionTree
 		sum = 0;
 		count = 0;
 
-		//training size trees of 50
+		//initialize training sizes to 1/4 of the training data
+		size = (int)Math.floor(train_examples.GetExamplesCount() * .25);
+
+		//training size trees of 1/4 the training data
 		for(int i = 0; i < 10; i++)
 		{
 			//sample the training set
-			Examples temp = StratifiedSampling(train_examples, 50, first_class_value, second_class_value);
+			Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 			//get an evaluation of the tree
 			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
@@ -1017,7 +1067,7 @@ public class DecisionTree
 		average = (double)sum/(double)count;
 
 		//print information
-		System.out.println("*************************TRAINING SIZE: 50*************************");
+		System.out.println("*************************TRAINING SIZE: " + size + "*************************");
 		System.out.println("AVG: " + formatter.format(average));
 		System.out.println("MIN: " + formatter.format(min));
 		System.out.println("MAX: " + formatter.format(max));
@@ -1028,11 +1078,14 @@ public class DecisionTree
 		sum = 0;
 		count = 0;
 
-		//training size trees of 50
+		//initialize training sizes to 1/2 of the training data
+		size = (int)Math.floor(train_examples.GetExamplesCount() * .5);
+
+		//training size trees of 1/2 the training data
 		for(int i = 0; i < 10; i++)
 		{
 			//sample the training set
-			Examples temp = StratifiedSampling(train_examples, 100, first_class_value, second_class_value);
+			Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 			//get an evaluation of the tree
 			eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
@@ -1048,7 +1101,7 @@ public class DecisionTree
 		average = (double)sum/(double)count;
 
 		//print information
-		System.out.println("*************************TRAINING SIZE: 100*************************");
+		System.out.println("*************************TRAINING SIZE: " + size + "*************************");
 		System.out.println("AVG: " + formatter.format(average));
 		System.out.println("MIN: " + formatter.format(min));
 		System.out.println("MAX: " + formatter.format(max));
@@ -1060,7 +1113,7 @@ public class DecisionTree
 		count = 0;
 
 
-		//training size tree of 200
+		//training size tree of full training set
 		//get an evaluation of the tree
 		eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
 
@@ -1068,13 +1121,13 @@ public class DecisionTree
 		accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
 
 		//print information
-		System.out.println("*************************TRAINING SIZE: 200*************************");
+		System.out.println("*************************TRAINING SIZE: " + train_examples.GetExamplesCount() + "*************************");
 		System.out.println("AVG: " + formatter.format(accuracy));
 		System.out.println("MIN: " + formatter.format(accuracy));
 		System.out.println("MAX: " + formatter.format(accuracy));
 	}
 
-	//print off learning curve information
+	//print off learning curve information to file
 	public static void LearningCurveFile(Attributes train_attributes, Examples train_examples, Examples test_examples, String first_class_value, String second_class_value, int m)
 	{
 		try
@@ -1083,12 +1136,16 @@ public class DecisionTree
 			double sum = 0, count = 0;
 			int eval_val = 0;
 			DecimalFormat formatter = new DecimalFormat("0.000000");
+			int size = 0;
 
-			//training size trees of 25
+			//initialize training sizes to 1/8 of the training data
+			size = (int)Math.floor(train_examples.GetExamplesCount() * .125);
+
+			//training size trees of 1/8 the training data
 			for(int i = 0; i < 10; i++)
 			{
 				//sample the training set
-				Examples temp = StratifiedSampling(train_examples, 25, first_class_value, second_class_value);
+				Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 				//get an evaluation of the tree
 				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
@@ -1104,7 +1161,7 @@ public class DecisionTree
 			average = (double)sum/(double)count;
 
 			//print information
-			writer.write("*************************TRAINING SIZE: 25*************************");
+			writer.write("*************************TRAINING SIZE: " + size + "*************************");
 			writer.newLine();
 			writer.write("AVG: " + formatter.format(average));
 			writer.newLine();
@@ -1119,11 +1176,14 @@ public class DecisionTree
 			sum = 0;
 			count = 0;
 
-			//training size trees of 50
+			//initialize training sizes to 1/4 of the training data
+			size = (int)Math.floor(train_examples.GetExamplesCount() * .25);
+
+			//training size trees of 1/4 the training data
 			for(int i = 0; i < 10; i++)
 			{
 				//sample the training set
-				Examples temp = StratifiedSampling(train_examples, 50, first_class_value, second_class_value);
+				Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 				//get an evaluation of the tree
 				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
@@ -1139,7 +1199,7 @@ public class DecisionTree
 			average = (double)sum/(double)count;
 
 			//print information
-			writer.write("*************************TRAINING SIZE: 50*************************");
+			writer.write("*************************TRAINING SIZE: " + size + "*************************");
 			writer.newLine();
 			writer.write("AVG: " + formatter.format(average));
 			writer.newLine();
@@ -1154,11 +1214,14 @@ public class DecisionTree
 			sum = 0;
 			count = 0;
 
-			//training size trees of 50
+			//initialize training sizes to 1/2 of the training data
+			size = (int)Math.floor(train_examples.GetExamplesCount() * .5);
+
+			//training size trees of 1/2 the training data
 			for(int i = 0; i < 10; i++)
 			{
 				//sample the training set
-				Examples temp = StratifiedSampling(train_examples, 100, first_class_value, second_class_value);
+				Examples temp = StratifiedSampling(train_examples, size, first_class_value, second_class_value);
 
 				//get an evaluation of the tree
 				eval_val = BuildDecisionTree(train_attributes, temp, test_examples, first_class_value, second_class_value, m, true);
@@ -1174,7 +1237,7 @@ public class DecisionTree
 			average = (double)sum/(double)count;
 
 			//print information
-			writer.write("*************************TRAINING SIZE: 100*************************");
+			writer.write("*************************TRAINING SIZE: " + size + "*************************");
 			writer.newLine();
 			writer.write("AVG: " + formatter.format(average));
 			writer.newLine();
@@ -1190,7 +1253,7 @@ public class DecisionTree
 			count = 0;
 
 
-			//training size tree of 200
+			//training size tree of full training set
 			//get an evaluation of the tree
 			eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
 
@@ -1198,7 +1261,7 @@ public class DecisionTree
 			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
 
 			//print information
-			writer.write("*************************TRAINING SIZE: 200*************************");
+			writer.write("*************************TRAINING SIZE: " + train_examples.GetExamplesCount() + "*************************");
 			writer.newLine();
 			writer.write("AVG: " + formatter.format(accuracy));
 			writer.newLine();
@@ -1311,5 +1374,133 @@ public class DecisionTree
 			return candidate;
 		else
 			return current_max;
+	}
+
+	//perform cross validation
+	public static void CrossValidation(Attributes train_attributes, Examples examples, String first_class_value, String second_class_value, int m, int k)
+	{
+		Random rand = new Random();
+		int samples = (int)Math.floor(examples.GetExamplesCount()/k);
+		Example[][] folds = new Example[k][samples];
+		double accuracy = 0, total_accuracy = 0;
+		int eval_val;
+		DecimalFormat formatter = new DecimalFormat("0.000000");
+
+		for(int i = 0; i < k; i++)
+		{
+			Example[] temp = new Example[samples];
+
+			for(int j = 0; j < samples; j++)
+			{
+				temp[j] = examples.RemoveExample(rand.nextInt(examples.GetExamplesCount()));
+			}
+
+			folds[i] = temp;
+		}
+
+		//perform k rounds of testing
+		for(int i = 0; i < k; i++)
+		{
+			Examples train_examples = new Examples(first_class_value, second_class_value), test_examples = new Examples(first_class_value, second_class_value);
+
+			for(int j = 0; j < k; j++)
+			{
+				//create testing set
+				if(j == i)
+				{
+					for(int l = 0; l < folds[i].length; l++)
+					{
+						Example temp = new Example();
+						temp.CopyExample(folds[j][l]);
+						test_examples.AddExample(temp);
+					}
+				}
+				//create training set
+				else
+				{
+					for(int l = 0; l < folds[i].length; l++)
+					{
+						Example temp = new Example();
+						temp.CopyExample(folds[j][l]);
+						train_examples.AddExample(temp);
+					}
+				}
+			}
+
+			//get an evaluation of the tree
+			eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
+			accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
+			total_accuracy += accuracy;
+			System.out.println("Fold: " + (i+1) + " Accuracy: " + formatter.format(accuracy));
+		}
+		System.out.println("Total: " + formatter.format(total_accuracy/k));
+	}
+
+	//perform cross validation
+	public static void CrossValidationFile(Attributes train_attributes, Examples examples, String first_class_value, String second_class_value, int m, int k)
+	{
+		try
+		{
+			Random rand = new Random();
+			int samples = (int)Math.floor(examples.GetExamplesCount()/k);
+			Example[][] folds = new Example[k][samples];
+			double accuracy = 0, total_accuracy = 0;
+			int eval_val;
+			DecimalFormat formatter = new DecimalFormat("0.000000");
+
+			for(int i = 0; i < k; i++)
+			{
+				Example[] temp = new Example[samples];
+
+				for(int j = 0; j < samples; j++)
+				{
+					temp[j] = examples.RemoveExample(rand.nextInt(examples.GetExamplesCount()));
+				}
+
+				folds[i] = temp;
+			}
+
+			//perform k rounds of testing
+			for(int i = 0; i < k; i++)
+			{
+				Examples train_examples = new Examples(first_class_value, second_class_value), test_examples = new Examples(first_class_value, second_class_value);
+
+				for(int j = 0; j < k; j++)
+				{
+					//create testing set
+					if(j == i)
+					{
+						for(int l = 0; l < folds[i].length; l++)
+						{
+							Example temp = new Example();
+							temp.CopyExample(folds[j][l]);
+							test_examples.AddExample(temp);
+						}
+					}
+					//create training set
+					else
+					{
+						for(int l = 0; l < folds[i].length; l++)
+						{
+							Example temp = new Example();
+							temp.CopyExample(folds[j][l]);
+							train_examples.AddExample(temp);
+						}
+					}
+				}
+
+				//get an evaluation of the tree
+				eval_val = BuildDecisionTree(train_attributes, train_examples, test_examples, first_class_value, second_class_value, m, true);
+				accuracy = (double)eval_val/(double)test_examples.GetExamplesCount();
+				total_accuracy += accuracy;
+				writer.write("Fold: " + (i+1) + " Accuracy: " + formatter.format(accuracy));
+				writer.newLine();
+			}
+			writer.write("Total: " + formatter.format(total_accuracy/k));
+		}
+		catch(IOException ioe)
+		{
+			System.out.println("IO exception");
+		}
 	}
 }
