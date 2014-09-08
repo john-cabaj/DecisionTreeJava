@@ -1445,7 +1445,8 @@ public class DecisionTree
 			total_accuracy += accuracy;
 			System.out.println("Fold: " + (i+1) + " Accuracy: " + formatter.format(accuracy));
 		}
-		System.out.println("Total: " + formatter.format(total_accuracy/k));
+		System.out.println();
+		System.out.println("Average: " + formatter.format(total_accuracy/k));
 	}
 
 	//perform cross validation
@@ -1508,7 +1509,8 @@ public class DecisionTree
 				writer.write("Fold: " + (i+1) + " Accuracy: " + formatter.format(accuracy));
 				writer.newLine();
 			}
-			writer.write("Total: " + formatter.format(total_accuracy/k));
+			writer.newLine();
+			writer.write("Average: " + formatter.format(total_accuracy/k));
 		}
 		catch(IOException ioe)
 		{
